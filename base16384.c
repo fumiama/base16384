@@ -1,3 +1,5 @@
+//base16384.c
+//MIT fumiama 20200416
 #include <stdio.h>
 #include <stdlib.h>
 #include "base16384.h"
