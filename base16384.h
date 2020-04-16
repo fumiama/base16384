@@ -10,6 +10,15 @@ void push(int istrue, FILE *fpo, int offset){
         pushbit(&outbuf, istrue);
     }
 }
+#define setoffset(x, offset){\
+    char flag = 0;\
+    ch1 = ch2 = x;\
+    while(!feof(fp) && (ch1 = fgetc(fp)) == x && (ch2 = fgetc(fp)) == x) {cnt8 -= offset; flag++;}\
+    if(ch2 != x) {ungetc(ch2, fp); ch2 = x;}\
+    if(ch1 != x) {ungetc(ch1, fp); ch1 = x;}\
+    while(feof(fp) && buf[cnt - 1] == x && buf[cnt - 2] == x) {cnt8 -= offset; cnt -= 2; flag++;}\
+    if(flag) cnt8 -= 8;\
+}
 void encode(FILE *fp, FILE *fpo){
     int cnt = 0;
 
@@ -28,19 +37,26 @@ void encode(FILE *fp, FILE *fpo){
         outbuf.b[outbuf.p / 8] &= ~(255u >> outbuf.p % 8);
         for(int i = 0; i < outbuf.p / 8 + 1; i += 2) outbuf.b[i] += HEAD;
         fwrite(outbuf.b, sizeof(char), (outbuf.p % 8)?outbuf.p / 8 + 1:outbuf.p / 8 , fpo);
-        if(((outbuf.p % 8)?outbuf.p / 8 + 1:outbuf.p / 8) % 2) fputc(0, fpo);
+        if(((outbuf.p % 8)?outbuf.p / 8 + 1:outbuf.p / 8) % 2){
+            fputc(0, fpo);
+            fputc('>', fpo);
+            fputc('>', fpo);
+        }
         for(int i = 0; i < outbuf.p % 8; i++) fputc('=', fpo);
     }
 }
 void decode(FILE *fp, FILE *fpo){
     int cnt = 0;
-    char ch = '=';
+    int cnt8 = 0;
+    int tc = 0;
+    char ch1;
+    char ch2;
     while((cnt = fread(buf, sizeof(char), BUFSIZ, fp))){
-        int cnt8 = cnt * 8;
-        while(!feof(fp) && (ch = fgetc(fp)) == '=') cnt8 -= 7;
-        if(ch != '=') {ungetc(ch, fp); ch = '=';}
-        while(feof(fp) && buf[cnt - 1] == '=' && buf[cnt - 2] == '=') {cnt8 -= 7; cnt -= 2;}
-        if(cnt8 % 8) cnt8 -= 8;
+        cnt8 = cnt * 8;
+        tc = cnt;
+        setoffset('=', 14)
+        setoffset('>', 16)
+
         for(int i = ((buf[0] == 0xFE)?16:0); i < cnt8; i++){
             if(!(i % 16)){
                 buf[i / 8] -= HEAD;
@@ -49,5 +65,5 @@ void decode(FILE *fp, FILE *fpo){
             push(buf[i / 8] & (128u >> (i % 8)), fpo, 0);
         }
     }
-    if(outbuf.p) fwrite(outbuf.b, sizeof(char), outbuf.p / 8 + ((outbuf.p % 8)?1:0), fpo);
+    if(outbuf.p) fwrite(outbuf.b, sizeof(char), (outbuf.p % 8)?outbuf.p / 8 + 1:outbuf.p / 8, fpo);
 }
