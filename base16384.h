@@ -1,3 +1,5 @@
+//base16384.h
+//MIT fumiama 20200416
 #include "bitio.h"
 #define HEAD 0x4E
 BIT outbuf;
