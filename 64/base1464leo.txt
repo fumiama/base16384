@@ -10,7 +10,7 @@ LENDAT* encode(const char* data, const u_int64_t len) {
 	LENDAT* encd = (LENDAT*)malloc(sizeof(LENDAT));
 	uint64_t outlen = len / 7 * 8;
 	uint8_t offset = len % 7;
-	switch(offset) {	//算上偏移标志字符占用的2字节
+	switch(offset) {	//ﯿ下珏���磏ￗ寗ﯿ卣矯���3篟���
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -23,7 +23,7 @@ LENDAT* encode(const char* data, const u_int64_t len) {
 	#ifdef DEBUG
 		printf("outlen: %llu, offset: %u, malloc: %llu\n", outlen, offset, outlen + 8);
 	#endif
-	encd->data = (uint8_t*)malloc(outlen + 8);	//冗余的8B用于可能的结尾的覆盖
+	encd->data = (uint8_t*)malloc(outlen + 8);	//珟���盄8甫翏���냿ￄ结￿皇믏���
 	encd->len = outlen;
 	uint64_t* vals = (uint64_t*)(encd->data);
 	uint64_t n = 0;
@@ -83,7 +83,7 @@ LENDAT* decode(const char* data, const u_int64_t len) {
 	uint8_t offset = 0;
 	if(data[len-2] == '=') {
 		offset = data[len-1];
-		switch(offset) {	//算上偏移标志字符占用的2字节
+		switch(offset) {	//ￗ介移篏���篟￦口的3ﯿ节
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:
