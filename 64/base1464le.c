@@ -1,4 +1,4 @@
-//basex64.c
+//base1464le.c
 //fumiama 20210407
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 
 //#define DEBUG
 
-LENDAT* encode(const char* data, const u_int64_t len) {
+LENDAT* encode(const uint8_t* data, const u_int64_t len) {
 	LENDAT* encd = (LENDAT*)malloc(sizeof(LENDAT));
 	uint64_t outlen = len / 7 * 8;
 	uint8_t offset = len % 7;
@@ -28,7 +28,7 @@ LENDAT* encode(const char* data, const u_int64_t len) {
 	uint64_t* vals = (uint64_t*)(encd->data);
 	uint64_t n = 0;
 	uint64_t i = 0;
-	for(; i < len - 7; i += 7) {
+	for(; i < len; i += 7) {
 		register uint64_t sum = 0x000000000000003f & ((uint64_t)data[i] >> 2);
 		sum |= ((((uint64_t)data[i + 1] >> 2) | (data[i] << 6)) << 8) & 0x000000000000ff00;
 		sum |= ((((uint64_t)data[i + 1] << 4) | ((uint64_t)data[i + 2] >> 4)) << 16) & 0x00000000003f0000;
@@ -77,7 +77,7 @@ LENDAT* encode(const char* data, const u_int64_t len) {
 	return encd;
 }
 
-LENDAT* decode(const char* data, const u_int64_t len) {
+LENDAT* decode(const uint8_t* data, const u_int64_t len) {
 	LENDAT* decd = (LENDAT*)malloc(sizeof(LENDAT));
 	uint64_t outlen = len;
 	uint8_t offset = 0;
@@ -136,78 +136,3 @@ LENDAT* decode(const char* data, const u_int64_t len) {
 	}
 	return decd;
 }
-
-void encode_file(const char* input, const char* output) {
-	FILE* fp = NULL;
-	fp = fopen(input, "rb");
-	if(fp) {
-		FILE* fpo = NULL;
-		fpo = fopen(output, "wb");
-		if(fpo) {
-			char* bufi = (char*)malloc(B14BUFSIZ/7*7);
-			if(bufi) {
-				int cnt = 0;
-				fputc(0xFE, fpo);
-    			fputc(0xFF, fpo);
-				while((cnt = fread(bufi, 1, B14BUFSIZ/7*7, fp))) {
-					LENDAT* ld = encode(bufi, cnt);
-					if(fwrite(ld->data, ld->len, 1, fpo) <= 0) {
-						puts("Write file error!");
-						exit(EXIT_FAILURE);
-					}
-					free(ld);
-				}
-				free(bufi);
-			} else puts("Allocate input buffer error!");
-			fclose(fpo);
-		} else puts("Open output file error!");
-		fclose(fp);
-	} else puts("Open input file error!");
-}
-
-int rm_head(FILE* fp) {
-	int ch = fgetc(fp);
-	if(ch == 0xFE) fgetc(fp);
-	else rewind(fp);
-}
-
-void decode_file(const char* input, const char* output) {
-	FILE* fp = NULL;
-	fp = fopen(input, "rb");
-	if(fp) {
-		FILE* fpo = NULL;
-		fpo = fopen(output, "wb");
-		if(fpo) {
-			char* bufi = (char*)malloc(B14BUFSIZ/8*8);
-			if(bufi) {
-				int cnt = 0;
-				rm_head(fp);
-				while((cnt = fread(bufi, 1, B14BUFSIZ/7*7, fp))) {
-					LENDAT* ld = decode(bufi, cnt);
-					if(fwrite(ld->data, ld->len, 1, fpo) <= 0) {
-						puts("Write file error!");
-						exit(EXIT_FAILURE);
-					}
-					free(ld);
-				}
-				free(bufi);
-			} else puts("Allocate input buffer error!");
-			fclose(fpo);
-		} else puts("Open output file error!");
-		fclose(fp);
-	} else puts("Open input file error!");
-}
-
-#define B1464LE_TEST
-#ifdef B1464LE_TEST
-int main(int argc, char** argv) {
-	LENDAT* ld = encode("just a simple test from fumiama", 32);
-	//puts(ld->data);
-	LENDAT* le = decode(ld->data, ld->len);
-	puts(le->data);
-	if(argc == 4) {
-		encode_file(argv[1], argv[2]);
-		decode_file(argv[2], argv[3]);
-	}
-}
-#endif
