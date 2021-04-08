@@ -26,7 +26,7 @@ git clone https://github.com/fumiama/base16384.git
 cd base16384
 ```
 
-Then use `cmake` to vuild.
+Then use `cmake` to build.
 
 然后使用`cmake`进行构建。
 
@@ -37,7 +37,7 @@ cmake ..
 make
 ```
 
-Now you can use it to encode/decode a file.
+Now you can encode/decode a file by commands below.
 
 现在可以使用命令对文件进行编码/解码。
 
