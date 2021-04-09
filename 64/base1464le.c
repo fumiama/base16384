@@ -30,11 +30,11 @@ LENDAT* encode(const uint8_t* data, const u_int64_t len) {
 	uint64_t i = 0;
 	for(; i < len; i += 7) {
 		register uint64_t sum = 0x000000000000003f & ((uint64_t)data[i] >> 2);
-		sum |= ((((uint64_t)data[i + 1] >> 2) | (data[i] << 6)) << 8) & 0x000000000000ff00;
-		sum |= ((((uint64_t)data[i + 1] << 4) | ((uint64_t)data[i + 2] >> 4)) << 16) & 0x00000000003f0000;
-		sum |= ((((uint64_t)data[i + 2] << 4) | ((uint64_t)data[i + 3] >> 4)) << 24) & 0x00000000ff000000;
-		sum |= ((((uint64_t)data[i + 3] << 2) | ((uint64_t)data[i + 4] >> 6)) << 32) & 0x0000003f00000000;
-		sum |= ((((uint64_t)data[i + 4] << 2) | ((uint64_t)data[i + 5] >> 6)) << 40) & 0x0000ff0000000000;
+		sum |= (((uint64_t)data[i + 1] << 6) | (data[i] << 14)) & 0x000000000000ff00;
+		sum |= (((uint64_t)data[i + 1] << 20) | ((uint64_t)data[i + 2] << 12)) & 0x00000000003f0000;
+		sum |= (((uint64_t)data[i + 2] << 28) | ((uint64_t)data[i + 3] << 20)) & 0x00000000ff000000;
+		sum |= (((uint64_t)data[i + 3] << 34) | ((uint64_t)data[i + 4] << 26)) & 0x0000003f00000000;
+		sum |= (((uint64_t)data[i + 4] << 42) | ((uint64_t)data[i + 5] << 34)) & 0x0000ff0000000000;
 		sum |= ((uint64_t)data[i + 5] << 48) & 0x003f000000000000;
 		sum |= ((uint64_t)data[i + 6] << 56) & 0xff00000000000000;
 		sum += 0x004e004e004e004e;
@@ -45,21 +45,21 @@ LENDAT* encode(const uint8_t* data, const u_int64_t len) {
 	}
 	if(offset > 0) {
 		register uint64_t sum = 0x000000000000003f & (data[i] >> 2);
-		sum |= (((uint64_t)data[i] << 6) << 8) & 0x000000000000c000;
+		sum |= ((uint64_t)data[i] << 14) & 0x000000000000c000;
 		if(offset > 1) {
-			sum |= (((uint64_t)data[i + 1] >> 2) << 8) & 0x0000000000003f00;
-			sum |= (((uint64_t)data[i + 1] << 4) << 16) & 0x0000000000300000;
+			sum |= ((uint64_t)data[i + 1] << 6) & 0x0000000000003f00;
+			sum |= ((uint64_t)data[i + 1] << 20) & 0x0000000000300000;
 			if(offset > 2) {
-				sum |= (((uint64_t)data[i + 2] >> 4) << 16) & 0x00000000000f0000;
-				sum |= (((uint64_t)data[i + 2] << 4) << 24) & 0x00000000f0000000;
+				sum |= ((uint64_t)data[i + 2] << 12) & 0x00000000000f0000;
+				sum |= ((uint64_t)data[i + 2] << 28) & 0x00000000f0000000;
 				if(offset > 3) {
-					sum |= (((uint64_t)data[i + 3] >> 4) << 24) & 0x000000000f000000;
-					sum |= (((uint64_t)data[i + 3] << 2) << 32) & 0x0000003c00000000;
+					sum |= ((uint64_t)data[i + 3] << 20) & 0x000000000f000000;
+					sum |= ((uint64_t)data[i + 3] << 34) & 0x0000003c00000000;
 					if(offset > 4) {
-						sum |= (((uint64_t)data[i + 4] >> 6) << 32) & 0x0000000300000000;
-						sum |= (((uint64_t)data[i + 4] << 2) << 40) & 0x0000fc0000000000;
+						sum |= ((uint64_t)data[i + 4] << 26) & 0x0000000300000000;
+						sum |= ((uint64_t)data[i + 4] << 42) & 0x0000fc0000000000;
 						if(offset > 5) {
-							sum |= (((uint64_t)data[i + 5] >> 6) << 40) & 0x0000030000000000;
+							sum |= ((uint64_t)data[i + 5] << 34) & 0x0000030000000000;
 							sum |= ((uint64_t)data[i + 5] << 48) & 0x003f000000000000;
 						}
 					}

@@ -30,16 +30,16 @@ LENDAT* encode(const uint8_t* data, const u_int32_t len) {
 	uint32_t i = 0;
 	for(; i < len; i += 7) {
 		register uint32_t sum = 0x0000003f & ((uint32_t)data[i] >> 2);
-		sum |= ((((uint32_t)data[i + 1] >> 2) | (data[i] << 6)) << 8) & 0x0000ff00;
-		sum |= ((((uint32_t)data[i + 1] << 4) | ((uint32_t)data[i + 2] >> 4)) << 16) & 0x003f0000;
-		sum |= ((((uint32_t)data[i + 2] << 4) | ((uint32_t)data[i + 3] >> 4)) << 24) & 0xff000000;
+		sum |= (((uint32_t)data[i + 1] << 6) | (data[i] << 14)) & 0x0000ff00;
+		sum |= (((uint32_t)data[i + 1] << 20) | ((uint32_t)data[i + 2] << 12)) & 0x003f0000;
+		sum |= (((uint32_t)data[i + 2] << 28) | ((uint32_t)data[i + 3] << 20)) & 0xff000000;
 		sum += 0x004e004e;
 		vals[n++] = sum;
 		#ifdef DEBUG
 			printf("n: %u, add sum: %08x\n", n, sum);
 		#endif
 		sum = ((((uint32_t)data[i + 3] << 2) | ((uint32_t)data[i + 4] >> 6))) & 0x0000003f;
-		sum |= ((((uint32_t)data[i + 4] << 2) | ((uint32_t)data[i + 5] >> 6)) << 8) & 0x0000ff00;
+		sum |= (((uint32_t)data[i + 4] << 10) | ((uint32_t)data[i + 5] << 2)) & 0x0000ff00;
 		sum |= ((uint32_t)data[i + 5] << 16) & 0x003f0000;
 		sum |= ((uint32_t)data[i + 6] << 24) & 0xff000000;
 		sum += 0x004e004e;
@@ -50,27 +50,27 @@ LENDAT* encode(const uint8_t* data, const u_int32_t len) {
 	}
 	if(offset > 0) {
 		register uint32_t sum = 0x0000003f & (data[i] >> 2);
-		sum |= (((uint32_t)data[i] << 6) << 8) & 0x0000c000;
+		sum |= ((uint32_t)data[i] << 14) & 0x0000c000;
 		if(offset > 1) {
-			sum |= (((uint32_t)data[i + 1] >> 2) << 8) & 0x00003f00;
-			sum |= (((uint32_t)data[i + 1] << 4) << 16) & 0x00300000;
+			sum |= ((uint32_t)data[i + 1] << 6) & 0x00003f00;
+			sum |= ((uint32_t)data[i + 1] << 20) & 0x00300000;
 			if(offset > 2) {
-				sum |= (((uint32_t)data[i + 2] >> 4) << 16) & 0x000f0000;
-				sum |= (((uint32_t)data[i + 2] << 4) << 24) & 0xf0000000;
+				sum |= ((uint32_t)data[i + 2] << 12) & 0x000f0000;
+				sum |= ((uint32_t)data[i + 2] << 28) & 0xf0000000;
 				if(offset == 2) {
 					sum += 0x004e004e;
 					vals[n++] = sum;
 				}
 				if(offset > 3) {
-					sum |= (((uint32_t)data[i + 3] >> 4) << 24) & 0x0f000000;
+					sum |= ((uint32_t)data[i + 3] << 20) & 0x0f000000;
 					sum += 0x004e004e;
 					vals[n++] = sum;
 					sum = (((uint32_t)data[i + 3] << 2)) & 0x0000003c;
 					if(offset > 4) {
 						sum |= (((uint32_t)data[i + 4] >> 6)) & 0x00000003;
-						sum |= (((uint32_t)data[i + 4] << 2) << 8) & 0x0000fc00;
+						sum |= ((uint32_t)data[i + 4] << 10) & 0x0000fc00;
 						if(offset > 5) {
-							sum |= (((uint32_t)data[i + 5] >> 6) << 8) & 0x00000300;
+							sum |= ((uint32_t)data[i + 5] << 2) & 0x00000300;
 							sum |= ((uint32_t)data[i + 5] << 16) & 0x003f0000;
 						}
 					}
