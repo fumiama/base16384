@@ -35,6 +35,7 @@ mkdir build
 cd build
 cmake ..
 make
+make install
 ```
 
 Now you can encode/decode a file by commands below.
