@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(base16384 VERSION 2.0)
+SET(CMAKE_BUILD_TYPE "Release")
 
 add_executable(base16384 base16384.c)
 
