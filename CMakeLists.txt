@@ -12,3 +12,6 @@ ELSE()
     add_subdirectory("./32")
     target_link_libraries(base16384 base1432)
 ENDIF()
+
+INSTALL(TARGETS base14 LIBRARY DESTINATION lib)
+INSTALL(TARGETS base16384 RUNTIME DESTINATION bin)

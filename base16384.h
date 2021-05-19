@@ -4,9 +4,9 @@
     #endif
 #endif
 #ifdef CPUBIT32
-    #include "./32/base1432le.h"
+    #include "./32/base14.h"
 #endif
 #ifdef CPUBIT64
-    #include "./64/base1464le.h"
+    #include "./64/base14.h"
 #endif
 

@@ -10,13 +10,13 @@ void encode_file(const char* input, const char* output) {
 		FILE* fpo = NULL;
 		fpo = fopen(output, "wb");
 		if(fpo) {
-			char* bufi = (char*)malloc(B14BUFSIZ/7*7);
+			uint8_t* bufi = (uint8_t*)malloc(B14BUFSIZ/7*7);
 			if(bufi) {
 				int cnt = 0;
 				fputc(0xFE, fpo);
     			fputc(0xFF, fpo);
 				fflush(fpo);
-				while((cnt = fread(bufi, sizeof(char), B14BUFSIZ/7*7, fp))) {
+				while((cnt = fread(bufi, sizeof(uint8_t), B14BUFSIZ/7*7, fp))) {
 					LENDAT* ld = encode(bufi, cnt);
 					if(fwrite(ld->data, ld->len, 1, fpo) <= 0) {
 						puts("Write file error!");
@@ -34,8 +34,14 @@ void encode_file(const char* input, const char* output) {
 
 int rm_head(FILE* fp) {
 	int ch = fgetc(fp);
-	if(ch == 0xFE) fgetc(fp);
-	else rewind(fp);
+	if(ch == 0xFE) {
+		fgetc(fp);
+		return 1;
+	}
+	else {
+		rewind(fp);
+		return 0;
+	}
 }
 
 static int is_next_end(FILE* fp) {
@@ -54,12 +60,12 @@ void decode_file(const char* input, const char* output) {
 		FILE* fpo = NULL;
 		fpo = fopen(output, "wb");
 		if(fpo) {
-			char* bufi = (char*)malloc(B14BUFSIZ/8*8 + 2);		//+2避免漏检结束偏移标志
+			uint8_t* bufi = (uint8_t*)malloc(B14BUFSIZ/8*8 + 2);		//+2避免漏检结束偏移标志
 			if(bufi) {
 				int cnt = 0;
 				int end = 0;
 				rm_head(fp);
-				while((cnt = fread(bufi, sizeof(char), B14BUFSIZ/8*8, fp))) {
+				while((cnt = fread(bufi, sizeof(uint8_t), B14BUFSIZ/8*8, fp))) {
 					if((end = is_next_end(fp))) {
 						bufi[cnt++] = '=';
 						bufi[cnt++] = end;
