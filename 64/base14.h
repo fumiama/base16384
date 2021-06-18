@@ -9,5 +9,5 @@ struct LENDAT {
 };
 typedef struct LENDAT LENDAT;
 
-LENDAT* encode(const uint8_t* data, const u_int64_t len);
-LENDAT* decode(const uint8_t* data, const u_int64_t len);
+LENDAT* encode(const uint8_t* data, const uint64_t len);
+LENDAT* decode(const uint8_t* data, const uint64_t len);

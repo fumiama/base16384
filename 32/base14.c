@@ -6,7 +6,7 @@
 
 //#define DEBUG
 
-LENDAT* encode(const uint8_t* data, const u_int32_t len) {
+LENDAT* encode(const uint8_t* data, const uint32_t len) {
 	LENDAT* encd = (LENDAT*)malloc(sizeof(LENDAT));
 	uint32_t outlen = len / 7 * 8;
 	uint8_t offset = len % 7;
@@ -85,7 +85,7 @@ LENDAT* encode(const uint8_t* data, const u_int32_t len) {
 	return encd;
 }
 
-LENDAT* decode(const uint8_t* data, const u_int32_t len) {
+LENDAT* decode(const uint8_t* data, const uint32_t len) {
 	LENDAT* decd = (LENDAT*)malloc(sizeof(LENDAT));
 	uint32_t outlen = len;
 	uint8_t offset = 0;
