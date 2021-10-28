@@ -28,7 +28,7 @@ LENDAT* encode(const uint8_t* data, const uint64_t len) {
 	uint64_t* vals = (uint64_t*)(encd->data);
 	uint64_t n = 0;
 	uint64_t i = 0;
-	for(; i < len; i += 7) {
+	for(; i <= len - 7; i += 7) {
 		register uint64_t sum = 0x000000000000003f & ((uint64_t)data[i] >> 2);
 		sum |= (((uint64_t)data[i + 1] << 6) | (data[i] << 14)) & 0x000000000000ff00;
 		sum |= (((uint64_t)data[i + 1] << 20) | ((uint64_t)data[i + 2] << 12)) & 0x00000000003f0000;
@@ -100,7 +100,7 @@ LENDAT* decode(const uint8_t* data, const uint64_t len) {
 	uint64_t* vals = (uint64_t*)data;
 	uint64_t n = 0;
 	uint64_t i = 0;
-	for(; n < len / 8; n++) {
+	for(; i <= outlen - 7; n++) {
 		register uint64_t sum = vals[n];
 		sum -= 0x004e004e004e004e;
 		decd->data[i++] = ((sum & 0x000000000000003f) << 2) | ((sum & 0x000000000000c000) >> 14);
