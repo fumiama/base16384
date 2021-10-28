@@ -15,13 +15,13 @@ void encode_file(const char* input, const char* output) {
 				int cnt = 0;
 				fputc(0xFE, fpo);
     			fputc(0xFF, fpo);
-				fflush(fpo);
 				while((cnt = fread(bufi, sizeof(uint8_t), B14BUFSIZ/7*7, fp))) {
 					LENDAT* ld = encode(bufi, cnt);
 					if(fwrite(ld->data, ld->len, 1, fpo) <= 0) {
 						puts("Write file error!");
 						exit(EXIT_FAILURE);
 					}
+					free(ld->data);
 					free(ld);
 				}
 				free(bufi);
@@ -32,16 +32,10 @@ void encode_file(const char* input, const char* output) {
 	} else puts("Open input file error!");
 }
 
-int rm_head(FILE* fp) {
+void rm_head(FILE* fp) {
 	int ch = fgetc(fp);
-	if(ch == 0xFE) {
-		fgetc(fp);
-		return 1;
-	}
-	else {
-		rewind(fp);
-		return 0;
-	}
+	if(ch == 0xFE) fgetc(fp);
+	else rewind(fp);
 }
 
 static int is_next_end(FILE* fp) {
@@ -75,6 +69,7 @@ void decode_file(const char* input, const char* output) {
 						puts("Write file error!");
 						exit(EXIT_FAILURE);
 					}
+					free(ld->data);
 					free(ld);
 				}
 				free(bufi);
