@@ -140,7 +140,7 @@ LENDAT* decode(const uint8_t* data, const uint32_t len) {
 						decd->data[i++] = ((sum & 0x00000003) << 6) | ((sum & 0x0000fc00) >> 10);
 						if(offset > 5) {
 							sum -= 0x004e0000;
-							decd->data[i++] = ((sum & 0x00000300) >> 2) | ((sum & 0x003f0000) >> 16);
+							decd->data[i] = ((sum & 0x00000300) >> 2) | ((sum & 0x003f0000) >> 16);
 						}
 					}
 				}
