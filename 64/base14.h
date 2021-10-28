@@ -5,9 +5,9 @@
 #define B14BUFSIZ 16384
 struct LENDAT {
     uint8_t* data;
-    uint64_t len;
+    int64_t len;
 };
 typedef struct LENDAT LENDAT;
 
-LENDAT* encode(const uint8_t* data, const uint64_t len);
-LENDAT* decode(const uint8_t* data, const uint64_t len);
+LENDAT* encode(const uint8_t* data, const int64_t len);
+LENDAT* decode(const uint8_t* data, const int64_t len);
