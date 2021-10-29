@@ -2,7 +2,23 @@
 //fumiama 20211029
 #include <stdio.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
+#if defined(__linux__)
+#  include <endian.h>
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#  include <sys/endian.h>
+#elif defined(__OpenBSD__)
+#  include <sys/types.h>
+#  define be16toh(x) betoh16(x)
+#  define be32toh(x) betoh32(x)
+#  define be64toh(x) betoh64(x)
+#elif defined(__MAC_10_0)
+#  define be16toh(x) ntohs(x)
+#  define be32toh(x) ntohl(x)
+#  define be64toh(x) ntohll(x)
+#  define htobe16(x) ntohs(x)
+#  define htobe32(x) htonl(x)
+#  define htobe64(x) htonll(x)
+#endif
 #include "base14.h"
 
 //#define DEBUG
@@ -31,7 +47,7 @@ LENDAT* encode(const uint8_t* data, const int64_t len) {
 	int64_t i = 0;
 	for(; i <= len - 7; i += 7) {
 		register uint64_t sum = 0;
-		register uint64_t shift = htonll(*(uint64_t*)(data+i))>>2; //这里有读取越界
+		register uint64_t shift = htobe64(*(uint64_t*)(data+i))>>2; //这里有读取越界
 		sum |= shift & 0x3fff000000000000;
 		shift >>= 2;
 		sum |= shift & 0x00003fff00000000;
@@ -40,7 +56,7 @@ LENDAT* encode(const uint8_t* data, const int64_t len) {
 		shift >>= 2;
 		sum |= shift & 0x0000000000003fff;
 		sum += 0x4e004e004e004e00;
-		vals[n++] = ntohll(sum);
+		vals[n++] = be64toh(sum);
 		#ifdef DEBUG
 			printf("i: %llu, add sum: %016llx\n", i, sum);
 		#endif
@@ -109,7 +125,7 @@ LENDAT* decode(const uint8_t* data, const int64_t len) {
 	int64_t i = 0;
 	for(; i <= outlen - 7; n++, i+=7) {
 		register uint64_t sum = 0;
-		register uint64_t shift = htonll(vals[n]) - 0x4e004e004e004e00;
+		register uint64_t shift = htobe64(vals[n]) - 0x4e004e004e004e00;
 		shift <<= 2;
 		sum |= shift & 0xfffc000000000000;
 		shift <<= 2;
@@ -118,7 +134,7 @@ LENDAT* decode(const uint8_t* data, const int64_t len) {
 		sum |= shift & 0x0000000fffc00000;
 		shift <<= 2;
 		sum |= shift & 0x00000000003fff00;
-		*(uint64_t*)(decd->data+i) = ntohll(sum);
+		*(uint64_t*)(decd->data+i) = be64toh(sum);
 		#ifdef DEBUG
 			printf("i: %llu, add sum: %016llx\n", i, sum);
 		#endif

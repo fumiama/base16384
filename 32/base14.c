@@ -2,7 +2,23 @@
 //fumiama 20210408
 #include <stdio.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
+#if defined(__linux__)
+#  include <endian.h>
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#  include <sys/endian.h>
+#elif defined(__OpenBSD__)
+#  include <sys/types.h>
+#  define be16toh(x) betoh16(x)
+#  define be32toh(x) betoh32(x)
+#  define be64toh(x) betoh64(x)
+#elif defined(__MAC_10_0)
+#  define be16toh(x) ntohs(x)
+#  define be32toh(x) ntohl(x)
+#  define be64toh(x) ntohll(x)
+#  define htobe16(x) ntohs(x)
+#  define htobe32(x) htonl(x)
+#  define htobe64(x) htonll(x)
+#endif
 #include "base14.h"
 
 //#define DEBUG
@@ -31,20 +47,20 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 	int32_t i = 0;
 	for(; i <= len - 7; i += 7) {
 		register uint32_t sum = 0;
-		register uint32_t shift = htonl(*(uint32_t*)(data+i));
+		register uint32_t shift = htobe32(*(uint32_t*)(data+i));
 		sum |= (shift>>2) & 0x3fff0000;
 		sum |= (shift>>4) & 0x00003fff;
 		sum += 0x4e004e00;
-		vals[n++] = ntohl(sum);
+		vals[n++] = be32toh(sum);
 		shift <<= 26;
 		shift &= 0x3c000000;
 		sum = 0;
-		shift |= (htonl(*(uint32_t*)(data+i+4))>>6)&0x03fffffc;
+		shift |= (htobe32(*(uint32_t*)(data+i+4))>>6)&0x03fffffc;
 		sum |= shift & 0x3fff0000;
 		shift >>= 2;
 		sum |= shift & 0x00003fff;
 		sum += 0x4e004e00;
-		vals[n++] = ntohl(sum);
+		vals[n++] = be32toh(sum);
 	}
 	uint8_t o = offset;
 	if(o--) {
@@ -113,20 +129,20 @@ LENDAT* decode(const uint8_t* data, const int32_t len) {
 	int32_t i = 0;
 	for(; i <= outlen - 7; i+=7) {	//n实际每次自增2
 		register uint32_t sum = 0;
-		register uint32_t shift = htonl(vals[n++]) - 0x4e004e00;
+		register uint32_t shift = htobe32(vals[n++]) - 0x4e004e00;
 		shift <<= 2;
 		sum |= shift & 0xfffc0000;
 		shift <<= 2;
 		sum |= shift & 0x0003fff0;
-		shift = htonl(vals[n++]) - 0x4e004e00;
+		shift = htobe32(vals[n++]) - 0x4e004e00;
 		sum |= shift >> 26;
-		*(uint32_t*)(decd->data+i) = ntohl(sum);
+		*(uint32_t*)(decd->data+i) = be32toh(sum);
 		sum = 0;
 		shift <<= 6;
 		sum |= shift & 0xffc00000;
 		shift <<= 2;
 		sum |= shift & 0x003fff00;
-		*(uint32_t*)(decd->data+i+4) = ntohl(sum);
+		*(uint32_t*)(decd->data+i+4) = be32toh(sum);
 	}
 	if(offset--) {
 		//这里有读取越界
