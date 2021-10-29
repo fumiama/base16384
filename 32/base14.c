@@ -2,6 +2,7 @@
 //fumiama 20210408
 #include <stdio.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 #include "base14.h"
 
 //#define DEBUG
