@@ -1,5 +1,5 @@
-//base1464le.c
-//fumiama 20210407
+//base14.c
+//fumiama 20211029
 #include <stdio.h>
 #include <stdlib.h>
 #include "base14.h"
@@ -29,16 +29,17 @@ LENDAT* encode(const uint8_t* data, const int64_t len) {
 	uint64_t n = 0;
 	int64_t i = 0;
 	for(; i <= len - 7; i += 7) {
-		register uint64_t sum = 0x000000000000003f & ((uint64_t)data[i] >> 2);
-		sum |= (((uint64_t)data[i + 1] << 6) | (data[i] << 14)) & 0x000000000000ff00;
-		sum |= (((uint64_t)data[i + 1] << 20) | ((uint64_t)data[i + 2] << 12)) & 0x00000000003f0000;
-		sum |= (((uint64_t)data[i + 2] << 28) | ((uint64_t)data[i + 3] << 20)) & 0x00000000ff000000;
-		sum |= (((uint64_t)data[i + 3] << 34) | ((uint64_t)data[i + 4] << 26)) & 0x0000003f00000000;
-		sum |= (((uint64_t)data[i + 4] << 42) | ((uint64_t)data[i + 5] << 34)) & 0x0000ff0000000000;
-		sum |= ((uint64_t)data[i + 5] << 48) & 0x003f000000000000;
-		sum |= ((uint64_t)data[i + 6] << 56) & 0xff00000000000000;
-		sum += 0x004e004e004e004e;
-		vals[n++] = sum;
+		register uint64_t sum = 0;
+		register uint64_t shift = htonll(*(uint64_t*)(data+i))>>2; //这里有读取越界
+		sum |= shift & 0x3fff000000000000;
+		shift >>= 2;
+		sum |= shift & 0x00003fff00000000;
+		shift >>= 2;
+		sum |= shift & 0x000000003fff0000;
+		shift >>= 2;
+		sum |= shift & 0x0000000000003fff;
+		sum += 0x4e004e004e004e00;
+		vals[n++] = ntohll(sum);
 		#ifdef DEBUG
 			printf("i: %llu, add sum: %016llx\n", i, sum);
 		#endif
@@ -68,7 +69,11 @@ LENDAT* encode(const uint8_t* data, const int64_t len) {
 			}
 		}
 		sum += 0x004e004e004e004e;
-		vals[n] = sum;
+		#if BYTE_ORDER == BIG_ENDIAN
+			vals[n] = __builtin_bswap64(sum);
+		#else
+			vals[n] = sum;
+		#endif
 		#ifdef DEBUG
 			printf("i: %llu, add sum: %016llx\n", i, sum);
 		#endif
@@ -96,23 +101,34 @@ LENDAT* decode(const uint8_t* data, const int64_t len) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	decd->data = (uint8_t*)malloc(outlen);
+	decd->data = (uint8_t*)malloc(outlen+1); //多出1字节用于循环覆盖
 	decd->len = outlen;
 	uint64_t* vals = (uint64_t*)data;
 	uint64_t n = 0;
 	int64_t i = 0;
-	for(; i <= outlen - 7; n++) {
-		register uint64_t sum = vals[n] - 0x004e004e004e004e;
-		decd->data[i++] = ((sum & 0x000000000000003f) << 2) | ((sum & 0x000000000000c000) >> 14);
-		decd->data[i++] = ((sum & 0x0000000000003f00) >> 6) | ((sum & 0x0000000000300000) >> 20);
-		decd->data[i++] = ((sum & 0x00000000000f0000) >> 12) | ((sum & 0x00000000f0000000) >> 28);
-		decd->data[i++] = ((sum & 0x000000000f000000) >> 20) | ((sum & 0x0000003c00000000) >> 34);
-		decd->data[i++] = ((sum & 0x0000000300000000) >> 26) | ((sum & 0x0000fc0000000000) >> 42);
-		decd->data[i++] = ((sum & 0x0000030000000000) >> 34) | ((sum & 0x003f000000000000) >> 48);
-		decd->data[i++] = ((sum & 0xff00000000000000) >> 56);
+	for(; i <= outlen - 7; n++, i+=7) {
+		register uint64_t sum = 0;
+		register uint64_t shift = htonll(vals[n]) - 0x4e004e004e004e00;
+		shift <<= 2;
+		sum |= shift & 0xfffc000000000000;
+		shift <<= 2;
+		sum |= shift & 0x0003fff000000000;
+		shift <<= 2;
+		sum |= shift & 0x0000000fffc00000;
+		shift <<= 2;
+		sum |= shift & 0x00000000003fff00;
+		*(uint64_t*)(decd->data+i) = ntohll(sum);
+		#ifdef DEBUG
+			printf("i: %llu, add sum: %016llx\n", i, sum);
+		#endif
 	}
 	if(offset--) {
-		register uint64_t sum = vals[n] - 0x000000000000004e;
+		//这里有读取越界
+		#if BYTE_ORDER == BIG_ENDIAN
+			register uint64_t sum = __builtin_bswap64(vals[n]) - 0x000000000000004e;
+		#else
+			register uint64_t sum = vals[n] - 0x000000000000004e;
+		#endif
 		decd->data[i++] = ((sum & 0x000000000000003f) << 2) | ((sum & 0x000000000000c000) >> 14);
 		if(offset--) {
 			sum -= 0x00000000004e0000;

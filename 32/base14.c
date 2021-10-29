@@ -29,24 +29,21 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 	uint32_t n = 0;
 	int32_t i = 0;
 	for(; i <= len - 7; i += 7) {
-		register uint32_t sum = 0x0000003f & ((uint32_t)data[i] >> 2);
-		sum |= (((uint32_t)data[i + 1] << 6) | (data[i] << 14)) & 0x0000ff00;
-		sum |= (((uint32_t)data[i + 1] << 20) | ((uint32_t)data[i + 2] << 12)) & 0x003f0000;
-		sum |= (((uint32_t)data[i + 2] << 28) | ((uint32_t)data[i + 3] << 20)) & 0xff000000;
-		sum += 0x004e004e;
-		vals[n++] = sum;
-		#ifdef DEBUG
-			printf("n: %u, add sum: %08x\n", n, sum);
-		#endif
-		sum = ((((uint32_t)data[i + 3] << 2) | ((uint32_t)data[i + 4] >> 6))) & 0x0000003f;
-		sum |= (((uint32_t)data[i + 4] << 10) | ((uint32_t)data[i + 5] << 2)) & 0x0000ff00;
-		sum |= ((uint32_t)data[i + 5] << 16) & 0x003f0000;
-		sum |= ((uint32_t)data[i + 6] << 24) & 0xff000000;
-		sum += 0x004e004e;
-		vals[n++] = sum;
-		#ifdef DEBUG
-			printf("n: %u, add sum: %08x\n", n, sum);
-		#endif
+		register uint32_t sum = 0;
+		register uint32_t shift = htonl(*(uint32_t*)(data+i));
+		sum |= (shift>>2) & 0x3fff0000;
+		sum |= (shift>>4) & 0x00003fff;
+		sum += 0x4e004e00;
+		vals[n++] = ntohl(sum);
+		shift <<= 26;
+		shift &= 0x3c000000;
+		sum = 0;
+		shift |= (htonl(*(uint32_t*)(data+i+4))>>6)&0x03fffffc;
+		sum |= shift & 0x3fff0000;
+		shift >>= 2;
+		sum |= shift & 0x00003fff;
+		sum += 0x4e004e00;
+		vals[n++] = ntohl(sum);
 	}
 	uint8_t o = offset;
 	if(o--) {
@@ -61,7 +58,11 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 				if(o--) {
 					sum |= ((uint32_t)data[i + 3] << 20) & 0x0f000000;
 					sum += 0x004e004e;
-					vals[n++] = sum;
+					#if BYTE_ORDER == BIG_ENDIAN
+						vals[n++] = __builtin_bswap32(sum);
+					#else
+						vals[n++] = sum;
+					#endif
 					sum = (((uint32_t)data[i + 3] << 2)) & 0x0000003c;
 					if(o--) {
 						sum |= (((uint32_t)data[i + 4] >> 6)) & 0x00000003;
@@ -71,11 +72,15 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 							sum |= ((uint32_t)data[i + 5] << 16) & 0x003f0000;
 						}
 					}
-					sum += 0x004e004e;
-					vals[n] = sum;
 				}
 			}
 		}
+		sum += 0x004e004e;
+		#if BYTE_ORDER == BIG_ENDIAN
+			vals[n] = __builtin_bswap32(sum);
+		#else
+			vals[n] = sum;
+		#endif
 		encd->data[outlen - 2] = '=';
 		encd->data[outlen - 1] = offset;
 	}
@@ -100,27 +105,35 @@ LENDAT* decode(const uint8_t* data, const int32_t len) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	decd->data = (uint8_t*)malloc(outlen);
+	decd->data = (uint8_t*)malloc(outlen+1); //多出1字节用于循环覆盖
 	decd->len = outlen;
 	uint32_t* vals = (uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
-	for(; i <= outlen - 7; n++) {	//n实际每次自增2
-		register uint32_t sum = vals[n++];
-		sum -= 0x004e004e;
-		decd->data[i++] = ((sum & 0x0000003f) << 2) | ((sum & 0x0000c000) >> 14);
-		decd->data[i++] = ((sum & 0x00003f00) >> 6) | ((sum & 0x00300000) >> 20);
-		decd->data[i++] = ((sum & 0x000f0000) >> 12) | ((sum & 0xf0000000) >> 28);
-		decd->data[i] = ((sum & 0x0f000000) >> 20);
-		sum = vals[n];
-		sum -= 0x004e004e;
-		decd->data[i++] |= ((sum & 0x0000003c) >> 2);
-		decd->data[i++] = ((sum & 0x00000003) << 6) | ((sum & 0x0000fc00) >> 10);
-		decd->data[i++] = ((sum & 0x00000300) >> 2) | ((sum & 0x003f0000) >> 16);
-		decd->data[i++] = ((sum & 0xff000000) >> 24);
+	for(; i <= outlen - 7; i+=7) {	//n实际每次自增2
+		register uint32_t sum = 0;
+		register uint32_t shift = htonl(vals[n++]) - 0x4e004e00;
+		shift <<= 2;
+		sum |= shift & 0xfffc0000;
+		shift <<= 2;
+		sum |= shift & 0x0003fff0;
+		shift = htonl(vals[n++]) - 0x4e004e00;
+		sum |= shift >> 26;
+		*(uint32_t*)(decd->data+i) = ntohl(sum);
+		sum = 0;
+		shift <<= 6;
+		sum |= shift & 0xffc00000;
+		shift <<= 2;
+		sum |= shift & 0x003fff00;
+		*(uint32_t*)(decd->data+i+4) = ntohl(sum);
 	}
 	if(offset--) {
-		register uint32_t sum = vals[n++];
+		//这里有读取越界
+		#if BYTE_ORDER == BIG_ENDIAN
+			register uint32_t sum = __builtin_bswap32(vals[n++]);
+		#else
+			register uint32_t sum = vals[n++];
+		#endif
 		sum -= 0x0000004e;
 		decd->data[i++] = ((sum & 0x0000003f) << 2) | ((sum & 0x0000c000) >> 14);
 		if(offset--) {
@@ -130,6 +143,7 @@ LENDAT* decode(const uint8_t* data, const int32_t len) {
 				decd->data[i++] = ((sum & 0x000f0000) >> 12) | ((sum & 0xf0000000) >> 28);
 				if(offset--) {
 					decd->data[i++] = (sum & 0x0f000000) >> 20;
+					//这里有读取越界
 					sum = vals[n];
 					sum -= 0x0000004e;
 					decd->data[i++] |= (sum & 0x0000003c) >> 2;
