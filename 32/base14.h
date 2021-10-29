@@ -2,7 +2,7 @@
 //fumiama 20210408
 #include <stdint.h>
 
-#define B14BUFSIZ 8192
+#define B14BUFSIZ 1024*1024 // 1M
 struct LENDAT {
     uint8_t* data;
     int32_t len;
