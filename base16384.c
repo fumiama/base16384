@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#if defined(__WINNT__)
+	#include <windows.h>
+#endif
 #include "base16384.h"
 
 void encode_file(const char* input, const char* output) {
@@ -80,22 +83,32 @@ void decode_file(const char* input, const char* output) {
 	} else puts("Open input file error!");
 }
 
+#ifndef __WINNT__
 unsigned long get_start_ms() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
+#endif
 
 #define CHOICE argv[1][1]
 int main(int argc, char** argv) {
 	if(argc == 4) {
-		unsigned long t = get_start_ms();
+		#if defined(__WINNT__)
+			clock_t t = clock();
+		#else
+			unsigned long t = get_start_ms();
+		#endif
         switch(CHOICE){
             case 'e': encode_file(argv[2], argv[3]); break;
             case 'd': decode_file(argv[2], argv[3]); break;
             default: break;
         }
-        printf("spend time: %lums\n", get_start_ms() - t);
+		#if defined(__WINNT__)
+			printf("spend time: %lums\n", clock() - t);
+		#else
+			printf("spend time: %lums\n", get_start_ms() - t);
+		#endif
 	} else {
         fputs("Usage: -[e|d] <inputfile> <outputfile>\n", stderr);
         fputs("\t-e encode\n", stderr);

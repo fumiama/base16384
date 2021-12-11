@@ -18,6 +18,22 @@
 #  define htobe16(x) ntohs(x)
 #  define htobe32(x) htonl(x)
 #  define htobe64(x) htonll(x)
+#elif defined(__WIN32__)
+	#ifdef WORDS_BIGENDIAN
+		#  define be16toh(x) (x)
+		#  define be32toh(x) (x)
+		#  define be64toh(x) (x)
+		#  define htobe16(x) (x)
+		#  define htobe32(x) (x)
+		#  define htobe64(x) (x)
+	#else
+		#  define be16toh(x) __builtin_bswap16(x)
+		#  define be32toh(x) __builtin_bswap32(x)
+		#  define be64toh(x) __builtin_bswap64(x)
+		#  define htobe16(x) __builtin_bswap16(x)
+		#  define htobe32(x) __builtin_bswap32(x)
+		#  define htobe64(x) __builtin_bswap64(x)
+	#endif
 #endif
 #include "base14.h"
 
@@ -75,7 +91,7 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 				if(o--) {
 					sum |= ((uint32_t)data[i + 3] << 20) & 0x0f000000;
 					sum += 0x004e004e;
-					#if BYTE_ORDER == BIG_ENDIAN
+					#ifdef WORDS_BIGENDIAN
 						vals[n++] = __builtin_bswap32(sum);
 					#else
 						vals[n++] = sum;
@@ -93,7 +109,7 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 			}
 		}
 		sum += 0x004e004e;
-		#if BYTE_ORDER == BIG_ENDIAN
+		#ifdef WORDS_BIGENDIAN
 			vals[n] = __builtin_bswap32(sum);
 		#else
 			vals[n] = sum;
@@ -146,7 +162,7 @@ LENDAT* decode(const uint8_t* data, const int32_t len) {
 	}
 	if(offset--) {
 		//这里有读取越界
-		#if BYTE_ORDER == BIG_ENDIAN
+		#ifdef WORDS_BIGENDIAN
 			register uint32_t sum = __builtin_bswap32(vals[n++]);
 		#else
 			register uint32_t sum = vals[n++];

@@ -4,6 +4,12 @@ SET(CMAKE_BUILD_TYPE "Release")
 
 add_executable(base16384 base16384.c)
 
+include(TestBigEndian)
+test_big_endian(isBigEndian)
+if (${isBigEndian})
+    add_definitions(-DWORDS_BIGENDIAN)
+endif()
+
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions("-DCPUBIT64")
     add_subdirectory("./64")
