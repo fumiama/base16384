@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#if defined(__WINNT__)
+#ifdef __WINNT__
 	#include <windows.h>
 #endif
 #include "base16384.h"

@@ -2,23 +2,30 @@
 //fumiama 20211029
 #include <stdio.h>
 #include <stdlib.h>
-#if defined(__linux__)
+#ifdef __linux__
 #  include <endian.h>
-#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#endif
+#ifdef __FreeBSD__
 #  include <sys/endian.h>
-#elif defined(__OpenBSD__)
+#endif
+#ifdef __NetBSD__
+#  include <sys/endian.h>
+#endif
+#ifdef __OpenBSD__
 #  include <sys/types.h>
 #  define be16toh(x) betoh16(x)
 #  define be32toh(x) betoh32(x)
 #  define be64toh(x) betoh64(x)
-#elif defined(__MAC_10_0)
+#endif
+#ifdef __MAC_10_0
 #  define be16toh(x) ntohs(x)
 #  define be32toh(x) ntohl(x)
 #  define be64toh(x) ntohll(x)
 #  define htobe16(x) ntohs(x)
 #  define htobe32(x) htonl(x)
 #  define htobe64(x) htonll(x)
-#elif defined(__WIN64__)
+#endif
+#ifdef _WIN64
 	#ifdef WORDS_BIGENDIAN
 		#  define be16toh(x) (x)
 		#  define be32toh(x) (x)
@@ -27,20 +34,22 @@
 		#  define htobe32(x) (x)
 		#  define htobe64(x) (x)
 	#else
-		#  define be16toh(x) __builtin_bswap16(x)
-		#  define be32toh(x) __builtin_bswap32(x)
-		#  define be64toh(x) __builtin_bswap64(x)
-		#  define htobe16(x) __builtin_bswap16(x)
-		#  define htobe32(x) __builtin_bswap32(x)
-		#  define htobe64(x) __builtin_bswap64(x)
+		#  define be16toh(x) _byteswap_ushort(x)
+		#  define be32toh(x) _byteswap_ulong(x)
+		#  define be64toh(x) _byteswap_uint64(x)
+		#  define htobe16(x) _byteswap_ushort(x)
+		#  define htobe32(x) _byteswap_ulong(x)
+		#  define htobe64(x) _byteswap_uint64(x)
 	#endif
 #endif
 #include "base14.h"
 
 //#define DEBUG
 
+#define new malloc
+
 LENDAT* encode(const uint8_t* data, const int64_t len) {
-	LENDAT* encd = (LENDAT*)malloc(sizeof(LENDAT));
+	LENDAT* encd = (LENDAT*)new(sizeof(LENDAT));
 	int64_t outlen = len / 7 * 8;
 	uint8_t offset = len % 7;
 	switch(offset) {	//算上偏移标志字符占用的2字节
@@ -56,7 +65,7 @@ LENDAT* encode(const uint8_t* data, const int64_t len) {
 	#ifdef DEBUG
 		printf("outlen: %llu, offset: %u, malloc: %llu\n", outlen, offset, outlen + 8);
 	#endif
-	encd->data = (uint8_t*)malloc(outlen + 8);	//冗余的8B用于可能的结尾的覆盖
+	encd->data = (uint8_t*)new(outlen + 8);	//冗余的8B用于可能的结尾的覆盖
 	encd->len = outlen;
 	uint64_t* vals = (uint64_t*)(encd->data);
 	uint64_t n = 0;
@@ -117,7 +126,7 @@ LENDAT* encode(const uint8_t* data, const int64_t len) {
 }
 
 LENDAT* decode(const uint8_t* data, const int64_t len) {
-	LENDAT* decd = (LENDAT*)malloc(sizeof(LENDAT));
+	LENDAT* decd = (LENDAT*)new(sizeof(LENDAT));
 	int64_t outlen = len;
 	uint8_t offset = 0;
 	if(data[len-2] == '=') {
@@ -134,7 +143,7 @@ LENDAT* decode(const uint8_t* data, const int64_t len) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	decd->data = (uint8_t*)malloc(outlen+1); //多出1字节用于循环覆盖
+	decd->data = (uint8_t*)new(outlen+1); //多出1字节用于循环覆盖
 	decd->len = outlen;
 	uint64_t* vals = (uint64_t*)data;
 	uint64_t n = 0;
