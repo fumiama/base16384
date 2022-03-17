@@ -39,7 +39,9 @@
 
 //#define DEBUG
 
-#define new malloc
+#ifndef new
+	#define new malloc
+#endif
 
 LENDAT* encode(const uint8_t* data, const int32_t len) {
 	LENDAT* encd = (LENDAT*)new(sizeof(LENDAT));
