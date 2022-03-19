@@ -1,5 +1,5 @@
-//base1432le.c
-//fumiama 20210408
+// base1432.c
+// fumiama 20220319
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef __linux__
@@ -37,17 +37,12 @@
 #endif
 #include "base14.h"
 
-//#define DEBUG
+// #define DEBUG
 
-#ifndef new
-	#define new malloc
-#endif
-
-LENDAT* encode(const uint8_t* data, const int32_t len) {
-	LENDAT* encd = (LENDAT*)new(sizeof(LENDAT));
-	int32_t outlen = len / 7 * 8;
-	uint8_t offset = len % 7;
-	switch(offset) {	//算上偏移标志字符占用的2字节
+int encode(const char* data, int dlen, char* buf, int blen) {
+	int outlen = dlen / 7 * 8;
+	int offset = dlen % 7;
+	switch(offset) {	// 算上偏移标志字符占用的2字节
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -60,12 +55,10 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 	#ifdef DEBUG
 		printf("outlen: %llu, offset: %u, malloc: %llu\n", outlen, offset, outlen + 8);
 	#endif
-	encd->data = (uint8_t*)new(outlen + 8);	//冗余的8B用于可能的结尾的覆盖
-	encd->len = outlen;
-	uint32_t* vals = (uint32_t*)(encd->data);
+	uint32_t* vals = (uint32_t*)buf;
 	uint32_t n = 0;
 	int32_t i = 0;
-	for(; i <= len - 7; i += 7) {
+	for(; i <= dlen - 7; i += 7) {
 		register uint32_t sum = 0;
 		register uint32_t shift = htobe32(*(uint32_t*)(data+i));
 		sum |= (shift>>2) & 0x3fff0000;
@@ -118,19 +111,18 @@ LENDAT* encode(const uint8_t* data, const int32_t len) {
 		#else
 			vals[n] = sum;
 		#endif
-		encd->data[outlen - 2] = '=';
-		encd->data[outlen - 1] = offset;
+		buf[outlen - 2] = '=';
+		buf[outlen - 1] = offset;
 	}
-	return encd;
+	return outlen;
 }
 
-LENDAT* decode(const uint8_t* data, const int32_t len) {
-	LENDAT* decd = (LENDAT*)new(sizeof(LENDAT));
-	int32_t outlen = len;
-	uint8_t offset = 0;
-	if(data[len-2] == '=') {
-		offset = data[len-1];
-		switch(offset) {	//算上偏移标志字符占用的2字节
+int decode(const char* data, int dlen, char* buf, int blen) {
+	int outlen = dlen;
+	int offset = 0;
+	if(data[dlen-2] == '=') {
+		offset = data[dlen-1];
+		switch(offset) {	// 算上偏移标志字符占用的2字节
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:
@@ -142,12 +134,10 @@ LENDAT* decode(const uint8_t* data, const int32_t len) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	decd->data = (uint8_t*)new(outlen+1); //多出1字节用于循环覆盖
-	decd->len = outlen;
 	uint32_t* vals = (uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
-	for(; i <= outlen - 7; i+=7) {	//n实际每次自增2
+	for(; i <= outlen - 7; i+=7) {	// n实际每次自增2
 		register uint32_t sum = 0;
 		register uint32_t shift = htobe32(vals[n++]) - 0x4e004e00;
 		shift <<= 2;
@@ -156,44 +146,44 @@ LENDAT* decode(const uint8_t* data, const int32_t len) {
 		sum |= shift & 0x0003fff0;
 		shift = htobe32(vals[n++]) - 0x4e004e00;
 		sum |= shift >> 26;
-		*(uint32_t*)(decd->data+i) = be32toh(sum);
+		*(uint32_t*)(buf+i) = be32toh(sum);
 		sum = 0;
 		shift <<= 6;
 		sum |= shift & 0xffc00000;
 		shift <<= 2;
 		sum |= shift & 0x003fff00;
-		*(uint32_t*)(decd->data+i+4) = be32toh(sum);
+		*(uint32_t*)(buf+i+4) = be32toh(sum);
 	}
 	if(offset--) {
-		//这里有读取越界
+		// 这里有读取越界
 		#ifdef WORDS_BIGENDIAN
 			register uint32_t sum = __builtin_bswap32(vals[n++]);
 		#else
 			register uint32_t sum = vals[n++];
 		#endif
 		sum -= 0x0000004e;
-		decd->data[i++] = ((sum & 0x0000003f) << 2) | ((sum & 0x0000c000) >> 14);
+		buf[i++] = ((sum & 0x0000003f) << 2) | ((sum & 0x0000c000) >> 14);
 		if(offset--) {
 			sum -= 0x004e0000;
-			decd->data[i++] = ((sum & 0x00003f00) >> 6) | ((sum & 0x00300000) >> 20);
+			buf[i++] = ((sum & 0x00003f00) >> 6) | ((sum & 0x00300000) >> 20);
 			if(offset--) {
-				decd->data[i++] = ((sum & 0x000f0000) >> 12) | ((sum & 0xf0000000) >> 28);
+				buf[i++] = ((sum & 0x000f0000) >> 12) | ((sum & 0xf0000000) >> 28);
 				if(offset--) {
-					decd->data[i++] = (sum & 0x0f000000) >> 20;
-					//这里有读取越界
+					buf[i++] = (sum & 0x0f000000) >> 20;
+					// 这里有读取越界
 					sum = vals[n];
 					sum -= 0x0000004e;
-					decd->data[i++] |= (sum & 0x0000003c) >> 2;
+					buf[i++] |= (sum & 0x0000003c) >> 2;
 					if(offset--) {
-						decd->data[i++] = ((sum & 0x00000003) << 6) | ((sum & 0x0000fc00) >> 10);
+						buf[i++] = ((sum & 0x00000003) << 6) | ((sum & 0x0000fc00) >> 10);
 						if(offset--) {
 							sum -= 0x004e0000;
-							decd->data[i] = ((sum & 0x00000300) >> 2) | ((sum & 0x003f0000) >> 16);
+							buf[i] = ((sum & 0x00000300) >> 2) | ((sum & 0x003f0000) >> 16);
 						}
 					}
 				}
 			}
 		}
 	}
-	return decd;
+	return outlen;
 }
