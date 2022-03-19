@@ -1,6 +1,7 @@
 // base1432.c
 // fumiama 20220319
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #ifdef __linux__
 #  include <endian.h>
