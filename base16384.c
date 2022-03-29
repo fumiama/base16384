@@ -1,6 +1,4 @@
-#ifdef __cosmopolitan
-typedef off_t long;
-#else
+#ifndef __cosmopolitan
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
