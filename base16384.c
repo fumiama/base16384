@@ -9,6 +9,7 @@
 #else
 struct timespec {
 	unsigned long tv_sec;
+	unsigned long tv_nsec;
 };
 #endif
 #include "base14.h"
