@@ -6,6 +6,10 @@
 #ifdef __WINNT__
 	#include <windows.h>
 #endif
+#else
+struct timespec {
+	unsigned long tv_sec;
+};
 #endif
 #include "base14.h"
 
@@ -133,14 +137,12 @@ void decode_file(const char* input, const char* output) {
 	以缩短程序运行时间 */
 }
 
-#ifndef __cosmopolitan
 #ifndef __WINNT__
 unsigned long get_start_ms() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
-#endif
 #endif
 
 #define CHOICE argv[1][1]
@@ -151,24 +153,20 @@ int main(int argc, char** argv) {
         fputs("\t-d decode\n", stderr);
         exit(EXIT_FAILURE);
     }
-	#ifndef __cosmopolitan
 	#ifdef __WINNT__
 		clock_t t = clock();
 	#else
 		unsigned long t = get_start_ms();
-	#endif
 	#endif
 	switch(CHOICE) {
 		case 'e': encode_file(argv[2], argv[3]); break;
 		case 'd': decode_file(argv[2], argv[3]); break;
 		default: break;
 	}
-	#ifndef __cosmopolitan
 	#ifdef __WINNT__
 		printf("spend time: %lums\n", clock() - t);
 	#else
 		printf("spend time: %lums\n", get_start_ms() - t);
-	#endif
 	#endif
     return 0;
 }
