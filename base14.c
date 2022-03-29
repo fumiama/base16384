@@ -1,5 +1,3 @@
-#include "base14.h"
-
 int encode_len(int dlen) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;

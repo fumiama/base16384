@@ -1,3 +1,6 @@
+#ifdef __cosmopolitan
+typedef off_t long;
+#else
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -5,16 +8,21 @@
 #ifdef __WINNT__
 	#include <windows.h>
 #endif
+#endif
 #include "base14.h"
 
+#ifdef __cosmopolitan
+#define get_file_size(filepath) ((off_t)GetFileSize(filepath))
+#else
 static off_t get_file_size(const char* filepath) {
     struct stat statbuf;
     return stat(filepath, &statbuf)?-1:statbuf.st_size;
 }
+#endif
 
 void encode_file(const char* input, const char* output) {
 	off_t inputsize = get_file_size(input);
-	if(inputsize < 0) {
+	if(inputsize <= 0) {
 		puts("Get file size error!");
 		return;
 	}
@@ -77,7 +85,7 @@ static int is_next_end(FILE* fp) {
 
 void decode_file(const char* input, const char* output) {
 	off_t inputsize = get_file_size(input);
-	if(inputsize < 0) {
+	if(inputsize <= 0) {
 		puts("Get file size error!");
 		return;
 	}
@@ -127,12 +135,14 @@ void decode_file(const char* input, const char* output) {
 	以缩短程序运行时间 */
 }
 
+#ifndef __cosmopolitan
 #ifndef __WINNT__
 unsigned long get_start_ms() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
+#endif
 #endif
 
 #define CHOICE argv[1][1]
@@ -143,20 +153,24 @@ int main(int argc, char** argv) {
         fputs("\t-d decode\n", stderr);
         exit(EXIT_FAILURE);
     }
+	#ifndef __cosmopolitan
 	#ifdef __WINNT__
 		clock_t t = clock();
 	#else
 		unsigned long t = get_start_ms();
+	#endif
 	#endif
 	switch(CHOICE) {
 		case 'e': encode_file(argv[2], argv[3]); break;
 		case 'd': decode_file(argv[2], argv[3]); break;
 		default: break;
 	}
+	#ifndef __cosmopolitan
 	#ifdef __WINNT__
 		printf("spend time: %lums\n", clock() - t);
 	#else
 		printf("spend time: %lums\n", get_start_ms() - t);
+	#endif
 	#endif
     return 0;
 }
