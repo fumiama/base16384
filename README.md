@@ -1,4 +1,6 @@
 # base16384
+> **Note**: This project used the awesome cross-patfrom binary compiling tool [cosmopolitan](https://github.com/jart/cosmopolitan)
+
 Encode binary file to printable utf16be, and vise versa.
 
 # Description 说明

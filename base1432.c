@@ -1,6 +1,11 @@
 // base1432.c
 // fumiama 20220319
-#ifndef __cosmopolitan // always le
+#ifdef __cosmopolitan // always le
+#  define be16toh(x) bswap_16(x)
+#  define be32toh(x) bswap_32(x)
+#  define htobe16(x) bswap_16(x)
+#  define htobe32(x) bswap_32(x)
+#else
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
