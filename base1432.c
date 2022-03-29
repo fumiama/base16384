@@ -1,14 +1,6 @@
 // base1432.c
 // fumiama 20220319
-#ifdef __cosmopolitan // always le
-#  define be16toh(x) __builtin_bswap16(x)
-#  define be32toh(x) __builtin_bswap32(x)
-#  define htobe16(x) __builtin_bswap16(x)
-#  define htobe32(x) __builtin_bswap32(x)
-typedef unsigned int uint32_t;
-typedef int int32_t;
-typedef unsigned char uint8_t;
-#else
+#ifndef __cosmopolitan // always le
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

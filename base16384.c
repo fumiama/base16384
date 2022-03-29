@@ -6,11 +6,6 @@
 #ifdef __WINNT__
 	#include <windows.h>
 #endif
-#else
-struct timespec {
-	unsigned long tv_sec;
-	unsigned long tv_nsec;
-};
 #endif
 #include "base14.h"
 
