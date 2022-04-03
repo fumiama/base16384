@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
         fputs("\t-d decode\n", stderr);
         exit(EXIT_FAILURE);
     }
-	#ifdef __WINNT__
+	#ifdef _WIN32
 		clock_t t = clock();
 	#else
 		unsigned long t = get_start_ms();
@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
 		case 'd': decode_file(argv[2], argv[3]); break;
 		default: break;
 	}
-	#ifdef __WINNT__
+	#ifdef _WIN32
 		printf("spend time: %lums\n", clock() - t);
 	#else
 		printf("spend time: %lums\n", get_start_ms() - t);
