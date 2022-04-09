@@ -2,10 +2,13 @@
 Encode binary file to readable utf16be.
 
 # Description 说明
-Use 16384 Chinene characters (\u4E00 to \u8DFF) as the alphabet, like the 64 chars in the base64.<br/>
-使用16384个汉字作为字符表，就像base64用64个字符作为字符表一样。<br/>
-We use \u3E3E as a sign of << 16, and \3D3D << 14.<br/>
-另外，使用\u3E3E作为解码时文件末尾向左偏移16位标识(对应编码时加0对齐2字节)，使用\3D3D作为解码时文件末尾向左偏移14位标识，对应编码时未满8字节的偏移量。
+Use 16384 Chinene characters (from \u4E00 to \u8DFF) as the "alphabet", just like what base64 did.
+
+使用16384个汉字作为字符表，就像base64用64个字符作为字符表一样。
+
+If length of the data has a remainder after moduled by 7, we will use \u3Dxx to log it with xx ranging from 01 to 06.
+
+另外，使用\u3Dxx附加在末尾以表示编码时数据不满7位的个数，其范围在01~06。
 
 # Benefits 优点
 Save more space and since the code 0x0000 is encoded to "一", finding zero space seems to be easier.<br/>
