@@ -25,33 +25,33 @@ char encbuf[BUFSIZ*1024/7*7];
 char decbuf[BUFSIZ*1024/8*8+2];
 
 void encode_file(const char* input, const char* output) {
-	off_t inputsize = get_file_size(input);
-	if(inputsize <= 0) {
+	off_t inputsize;
+	FILE* fp = NULL;
+	FILE* fpo;
+	if(*(uint16_t*)input == *(uint16_t*)"-") { // read from stdin
+		inputsize = 0;
+		fp = stdin;
+	} else inputsize = get_file_size(input);
+	if(inputsize < 0) {
 		perror("Get file size error: ");
 		return;
 	}
-	if(inputsize > (1u<<31)-1) {
-		puts("Input file too big!");
-		return;
-	}
-	FILE* fpo = NULL;
-	fpo = fopen(output, "wb");
+	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
 	if(!fpo) {
 		perror("Fopen output file error: ");
 		return;
 	}
-	if(inputsize > BUFSIZ*1024) { // big file, use encbuf & fread
+	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use encbuf & fread
 		inputsize = BUFSIZ*1024/7*7;
 		#ifdef _WIN32
 	}
 		#endif
-		FILE* fp = NULL;
-		fp = fopen(input, "rb");
+		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
 			perror("Fopen input file error: ");
 			return;
 		}
-		
+
 		int outputsize = encode_len(inputsize)+16;
 		size_t cnt = 0;
 		fputc(0xFE, fpo);
@@ -112,28 +112,28 @@ static int is_next_end(FILE* fp) {
 }
 
 void decode_file(const char* input, const char* output) {
-	off_t inputsize = get_file_size(input);
-	if(inputsize <= 0) {
+	off_t inputsize;
+	FILE* fp = NULL;
+	FILE* fpo;
+	if(*(uint16_t*)input == *(uint16_t*)"-") { // read from stdin
+		inputsize = 0;
+		fp = stdin;
+	} else inputsize = get_file_size(input);
+	if(inputsize < 0) {
 		perror("Get file size error: ");
 		return;
 	}
-	if(inputsize > (1u<<31)-1) {
-		puts("Input file too big!");
-		return;
-	}
-	FILE* fpo = NULL;
-	fpo = fopen(output, "wb");
+	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
 	if(!fpo) {
 		perror("Fopen output file error: ");
 		return;
 	}
-	if(inputsize > BUFSIZ*1024) { // big file, use decbuf & fread
+	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use decbuf & fread
 		inputsize = BUFSIZ*1024/8*8;
 		#ifdef _WIN32
 	}
 		#endif
-		FILE* fp = NULL;
-		fp = fopen(input, "rb");
+		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
 			perror("Fopen input file error: ");
 			return;
@@ -191,28 +191,31 @@ unsigned long get_start_ms() {
 }
 #endif
 
-#define CHOICE argv[1][1]
 int main(int argc, char** argv) {
 	if(argc != 4) {
-        fputs("Usage: -[e|d] <inputfile> <outputfile>\n", stderr);
-        fputs("\t-e encode\n", stderr);
-        fputs("\t-d decode\n", stderr);
-        exit(EXIT_FAILURE);
+        puts("Usage: -[e|d] <inputfile> <outputfile>");
+        puts("\t-e encode");
+        puts("\t-d decode");
+		puts("\t<inputfile>  pass - to read from stdin");
+		puts("\t<outputfile> pass - to write to stdout");
+        exit(EXIT_SUCCESS);
     }
 	#ifdef _WIN32
 		clock_t t = clock();
 	#else
 		unsigned long t = get_start_ms();
 	#endif
-	switch(CHOICE) {
+	switch(argv[1][1]) {
 		case 'e': encode_file(argv[2], argv[3]); break;
 		case 'd': decode_file(argv[2], argv[3]); break;
 		default: break;
 	}
-	#ifdef _WIN32
-		printf("spend time: %lums\n", clock() - t);
-	#else
-		printf("spend time: %lums\n", get_start_ms() - t);
-	#endif
+	if(*(uint16_t*)(argv[3]) != *(uint16_t*)"-") {
+		#ifdef _WIN32
+			printf("spend time: %lums\n", clock() - t);
+		#else
+			printf("spend time: %lums\n", get_start_ms() - t);
+		#endif
+	}
     return 0;
 }
