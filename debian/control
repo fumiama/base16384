@@ -1,0 +1,15 @@
+Source: base16384
+Section: utils
+Priority: optional
+Maintainer: fumiama <fumiama@foxmail.com>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.4.1
+Homepage: https://github.com/fumiama/base16384
+Vcs-Browser: https://salsa.debian.org/debian/base16384
+Vcs-Git: https://salsa.debian.org/debian/base16384.git
+
+Package: base16384
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Encode binary files to printable utf16be.
+ We use 16384 Chinese characters (from \u4E00 to \u8DFF) as the "alphabet", just like what base64 did. If length of the data has a remainder after mod 7, we will use \u3Dxx to present it with xx ranging from 01 to 06.

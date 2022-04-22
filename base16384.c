@@ -1,5 +1,6 @@
 #ifndef __cosmopolitan
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>

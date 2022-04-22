@@ -1,0 +1,3 @@
+base16384-dbgsym_2.2.0_amd64.ddeb debug optional automatic=yes
+base16384_2.2.0_amd64.buildinfo utils optional
+base16384_2.2.0_amd64.deb utils optional
