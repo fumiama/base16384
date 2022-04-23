@@ -1,4 +1,4 @@
-base16384 (2.2.0) focal; urgency=medium
+base16384 (2.2.0) stable; urgency=medium
 
   * Initial Release.
   * Closes: #1010055 (ITP).
