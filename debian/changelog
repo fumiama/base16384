@@ -1,5 +1,6 @@
 base16384 (2.2.0) focal; urgency=medium
 
   * Initial Release.
+  * Closes: #1010055 (ITP).
 
  -- fumiama <fumiama@foxmail.com>  Sat, 23 Apr 2022 00:05:36 +0800
