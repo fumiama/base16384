@@ -19,6 +19,15 @@ Save more space and since the code 0x0000 is encoded to "一", finding zero spac
 
 ## Usage 使用说明
 
+### Install from my PPA in Ubuntu 直接安装
+```bash
+sudo add-apt-repository ppa:fumiama/ppa
+sudo apt-get update
+sudo apt-get install base16384
+```
+
+### Build from source code 编译
+
 Clone this repo first.
 
 首先克隆该仓库。
