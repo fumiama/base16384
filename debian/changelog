@@ -1,5 +1,5 @@
 base16384 (2.2.0-1) unstable; urgency=medium
 
-  * Initial Release. Closes: #1010055 (ITP).
+  * Initial Release. Fix some issues in packaging.
 
  -- fumiama <fumiama@foxmail.com>  Wed, 27 Apr 2022 09:55:33 +0800
