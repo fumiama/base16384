@@ -1,4 +1,4 @@
-base16384 (2.2.0-1) unstable; urgency=medium
+base16384 (2.2.0-3) unstable; urgency=medium
 
   * Fix some issues in packaging. Closes: #1010055 (ITP).
 
