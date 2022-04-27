@@ -12,4 +12,7 @@ Package: base16384
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Encode binary files to printable utf16be.
- We use 16384 Chinese characters (from \u4E00 to \u8DFF) as the "alphabet", just like what base64 did. If length of the data has a remainder after mod 7, we will use \u3Dxx to present it with xx ranging from 01 to 06.
+ We use 16384 Chinese characters (from \u4E00 to \u8DFF) as the "alphabet",
+ just like what base64 did.
+ If length of the data has a remainder after mod 7,
+ we will use \u3Dxx to present it with xx ranging from 01 to 06.
