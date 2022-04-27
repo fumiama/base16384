@@ -11,11 +11,15 @@ if (${isBigEndian})
 endif()
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_library(base16384 SHARED base1464.c)
+    add_library(libbase16384 SHARED base1464.c)
 ELSE()
-    add_library(base16384 SHARED base1432.c)
+    add_library(libbase16384 SHARED base1432.c)
 ENDIF()
 
+target_link_libraries(base16384 libbase16384)
+
+set_target_properties(libbase16384 PROPERTIES OUTPUT_NAME base16384)
+
 INSTALL(TARGETS base16384 RUNTIME DESTINATION bin)
-INSTALL(TARGETS base16384 LIBRARY DESTINATION lib)
+INSTALL(TARGETS libbase16384 LIBRARY DESTINATION lib)
 INSTALL(FILES base16384.h DESTINATION include)
