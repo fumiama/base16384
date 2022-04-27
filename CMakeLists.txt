@@ -19,7 +19,6 @@ ENDIF()
 set_target_properties(libbase16384 PROPERTIES
                         OUTPUT_NAME base16384
                         VERSION 2.2.0
-                        SOVERSION 2
                     )
 
 target_link_libraries(base16384 libbase16384)
