@@ -25,7 +25,7 @@ static off_t get_file_size(const char* filepath) {
 char encbuf[BUFSIZ*1024/7*7];
 char decbuf[BUFSIZ*1024/8*8+2];
 
-void encode_file(const char* input, const char* output) {
+static int encode_file(const char* input, const char* output) {
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
@@ -35,12 +35,12 @@ void encode_file(const char* input, const char* output) {
 	} else inputsize = get_file_size(input);
 	if(inputsize < 0) {
 		perror("Get file size error: ");
-		return;
+		return 1;
 	}
 	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
 	if(!fpo) {
 		perror("Fopen output file error: ");
-		return;
+		return 2;
 	}
 	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use encbuf & fread
 		inputsize = BUFSIZ*1024/7*7;
@@ -50,7 +50,7 @@ void encode_file(const char* input, const char* output) {
 		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
 			perror("Fopen input file error: ");
-			return;
+			return 3;
 		}
 
 		int outputsize = encode_len(inputsize)+16;
@@ -61,7 +61,7 @@ void encode_file(const char* input, const char* output) {
 			int n = encode(encbuf, cnt, decbuf, outputsize);
 			if(fwrite(decbuf, n, 1, fpo) <= 0) {
 				perror("Write file error: ");
-				return;
+				return 4;
 			}
 		}
 		/* 由操作系统负责释放资源
@@ -73,12 +73,12 @@ void encode_file(const char* input, const char* output) {
 		int fd = open(input, O_RDONLY);
 		if(fd <= 0) {
 			perror("Open input file error: ");
-			return;
+			return 5;
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
 			perror("Map input file error: ");
-			return;
+			return 6;
 		}
 		int outputsize = encode_len(inputsize)+16;
 		fputc(0xFE, fpo);
@@ -86,7 +86,7 @@ void encode_file(const char* input, const char* output) {
 		int n = encode(input_file, (int)inputsize, decbuf, outputsize);
 		if(fwrite(decbuf, n, 1, fpo) <= 0) {
 			perror("Write file error: ");
-			return;
+			return 7;
 		}
 		munmap(input_file, (size_t)inputsize);
 		/* 由操作系统负责释放资源
@@ -95,6 +95,7 @@ void encode_file(const char* input, const char* output) {
 		以缩短程序运行时间 */	
 	}
 	#endif
+	return 0;
 }
 
 #define rm_head(fp) {\
@@ -112,7 +113,7 @@ static int is_next_end(FILE* fp) {
 	return 0;
 }
 
-void decode_file(const char* input, const char* output) {
+static int decode_file(const char* input, const char* output) {
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
@@ -122,12 +123,12 @@ void decode_file(const char* input, const char* output) {
 	} else inputsize = get_file_size(input);
 	if(inputsize < 0) {
 		perror("Get file size error: ");
-		return;
+		return 1;
 	}
 	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
 	if(!fpo) {
 		perror("Fopen output file error: ");
-		return;
+		return 2;
 	}
 	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use decbuf & fread
 		inputsize = BUFSIZ*1024/8*8;
@@ -137,7 +138,7 @@ void decode_file(const char* input, const char* output) {
 		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
 			perror("Fopen input file error: ");
-			return;
+			return 3;
 		}
 		int outputsize = decode_len(inputsize, 0)+16;
 		int cnt = 0;
@@ -150,7 +151,7 @@ void decode_file(const char* input, const char* output) {
 			}
 			if(fwrite(encbuf, decode(decbuf, cnt, encbuf, outputsize), 1, fpo) <= 0) {
 				perror("Write file error: ");
-				return;
+				return 4;
 			}
 		}
 		/* 由操作系统负责释放资源
@@ -162,18 +163,18 @@ void decode_file(const char* input, const char* output) {
 		int fd = open(input, O_RDONLY);
 		if(fd <= 0) {
 			perror("Open input file error: ");
-			return;
+			return 5;
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
 			perror("Map input file error: ");
-			return;
+			return 6;
 		}
 		int outputsize = decode_len(inputsize, 0)+16;
 		int off = skip_offset(input_file);
 		if(fwrite(encbuf, decode(input_file+off, inputsize-off, encbuf, outputsize), 1, fpo) <= 0) {
 			perror("Write file error: ");
-			return;
+			return 7;
 		}
 		munmap(input_file, (size_t)inputsize);
 		/* 由操作系统负责释放资源
@@ -182,6 +183,7 @@ void decode_file(const char* input, const char* output) {
 		以缩短程序运行时间 */	
 	}
 	#endif
+	return 0;
 }
 
 #ifndef _WIN32
@@ -206,17 +208,18 @@ int main(int argc, char** argv) {
 	#else
 		unsigned long t = get_start_ms();
 	#endif
+	int exitstat = 0;
 	switch(argv[1][1]) {
-		case 'e': encode_file(argv[2], argv[3]); break;
-		case 'd': decode_file(argv[2], argv[3]); break;
+		case 'e': exitstat = encode_file(argv[2], argv[3]); break;
+		case 'd': exitstat = decode_file(argv[2], argv[3]); break;
 		default: break;
 	}
-	if(*(uint16_t*)(argv[3]) != *(uint16_t*)"-") {
+	if(!exitstat && *(uint16_t*)(argv[3]) != *(uint16_t*)"-") {
 		#ifdef _WIN32
 			printf("spend time: %lums\n", clock() - t);
 		#else
 			printf("spend time: %lums\n", get_start_ms() - t);
 		#endif
 	}
-    return 0;
+    return exitstat;
 }
