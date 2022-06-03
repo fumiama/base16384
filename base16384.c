@@ -1,3 +1,20 @@
+/* base16384.c
+ * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
+ * Copyright (c) 2022 Fumiama Minamoto.
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef __cosmopolitan
 #include <stdio.h>
 #include <stdint.h>
@@ -34,12 +51,12 @@ static int encode_file(const char* input, const char* output) {
 		fp = stdin;
 	} else inputsize = get_file_size(input);
 	if(inputsize < 0) {
-		perror("Get file size error: ");
+		perror("Get file size error");
 		return 1;
 	}
 	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
 	if(!fpo) {
-		perror("Fopen output file error: ");
+		perror("Fopen output file error");
 		return 2;
 	}
 	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use encbuf & fread
@@ -49,7 +66,7 @@ static int encode_file(const char* input, const char* output) {
 		#endif
 		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
-			perror("Fopen input file error: ");
+			perror("Fopen input file error");
 			return 3;
 		}
 
@@ -60,7 +77,7 @@ static int encode_file(const char* input, const char* output) {
 		while((cnt = fread(encbuf, sizeof(char), inputsize, fp))) {
 			int n = encode(encbuf, cnt, decbuf, outputsize);
 			if(fwrite(decbuf, n, 1, fpo) <= 0) {
-				perror("Write file error: ");
+				perror("Write file error");
 				return 4;
 			}
 		}
@@ -72,12 +89,12 @@ static int encode_file(const char* input, const char* output) {
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
 		if(fd <= 0) {
-			perror("Open input file error: ");
+			perror("Open input file error");
 			return 5;
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
-			perror("Map input file error: ");
+			perror("Map input file error");
 			return 6;
 		}
 		int outputsize = encode_len(inputsize)+16;
@@ -85,7 +102,7 @@ static int encode_file(const char* input, const char* output) {
 		fputc(0xFF, fpo);
 		int n = encode(input_file, (int)inputsize, decbuf, outputsize);
 		if(fwrite(decbuf, n, 1, fpo) <= 0) {
-			perror("Write file error: ");
+			perror("Write file error");
 			return 7;
 		}
 		munmap(input_file, (size_t)inputsize);
@@ -122,12 +139,12 @@ static int decode_file(const char* input, const char* output) {
 		fp = stdin;
 	} else inputsize = get_file_size(input);
 	if(inputsize < 0) {
-		perror("Get file size error: ");
+		perror("Get file size error");
 		return 1;
 	}
 	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
 	if(!fpo) {
-		perror("Fopen output file error: ");
+		perror("Fopen output file error");
 		return 2;
 	}
 	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use decbuf & fread
@@ -137,7 +154,7 @@ static int decode_file(const char* input, const char* output) {
 		#endif
 		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
-			perror("Fopen input file error: ");
+			perror("Fopen input file error");
 			return 3;
 		}
 		int outputsize = decode_len(inputsize, 0)+16;
@@ -150,7 +167,7 @@ static int decode_file(const char* input, const char* output) {
 				decbuf[cnt++] = end;
 			}
 			if(fwrite(encbuf, decode(decbuf, cnt, encbuf, outputsize), 1, fpo) <= 0) {
-				perror("Write file error: ");
+				perror("Write file error");
 				return 4;
 			}
 		}
@@ -162,18 +179,18 @@ static int decode_file(const char* input, const char* output) {
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
 		if(fd <= 0) {
-			perror("Open input file error: ");
+			perror("Open input file error");
 			return 5;
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
-			perror("Map input file error: ");
+			perror("Map input file error");
 			return 6;
 		}
 		int outputsize = decode_len(inputsize, 0)+16;
 		int off = skip_offset(input_file);
 		if(fwrite(encbuf, decode(input_file+off, inputsize-off, encbuf, outputsize), 1, fpo) <= 0) {
-			perror("Write file error: ");
+			perror("Write file error");
 			return 7;
 		}
 		munmap(input_file, (size_t)inputsize);
