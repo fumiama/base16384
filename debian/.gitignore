@@ -1,5 +1,7 @@
 /base16384
+/base16384-dev
 debhelper-build-stamp
-base16384.substvars
+*.substvars
 /.debhelper
 /files
+/tmp

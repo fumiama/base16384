@@ -21,6 +21,6 @@ Description: Encode binary files to printable utf16be
 
 Package: base16384-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${misc:Depends}
 Description: Header and static library of base16384
  This package provides development files for base16384.
