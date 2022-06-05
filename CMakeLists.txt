@@ -23,8 +23,8 @@ ELSE()
 ENDIF()
 
 set_target_properties(base16384_b PROPERTIES OUTPUT_NAME base16384)
-set_target_properties(base16384     PROPERTIES OUTPUT_NAME base16384 VERSION 2.2.0)
-set_target_properties(base16384_s   PROPERTIES OUTPUT_NAME base16384)
+set_target_properties(base16384   PROPERTIES OUTPUT_NAME base16384)
+set_target_properties(base16384_s PROPERTIES OUTPUT_NAME base16384)
 
 target_link_libraries(base16384_b base16384_s)
 
