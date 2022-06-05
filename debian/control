@@ -18,3 +18,9 @@ Description: Encode binary files to printable utf16be
  If length of the data has a remainder after mod 7,
  an unicode Chinese character \u3Dxx will be appended to present it
  with xx ranging from 01 to 06.
+
+Package: base16384-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Header and static library of base16384
+ This package provides development files for base16384.
