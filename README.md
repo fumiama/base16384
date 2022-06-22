@@ -1,7 +1,7 @@
 # base16384
-> **Note**: This project used the awesome cross-patfrom binary compiling tool [cosmopolitan](https://github.com/jart/cosmopolitan)
+> **Note**: This project used the awesome cross-platform binary compiling tool [cosmopolitan](https://github.com/jart/cosmopolitan)
 
-Encode binary file to printable utf16be, and vise versa.
+Encode binary file to printable utf16be, and vice versa.
 
 ## Description 说明
 Use 16384 Chinene characters (from \u4E00 to \u8DFF) as the "alphabet", just like what base64 did.
