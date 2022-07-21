@@ -19,7 +19,7 @@ Description: Encode binary files to printable utf16be
  an unicode Chinese character \u3Dxx will be appended to present it
  with xx ranging from 01 to 06.
 
-Package: libbase16384
+Package: libbase16384-2
 Architecture: any
 Depends: ${misc:Depends}
 Description: Dynamic library of base16384
