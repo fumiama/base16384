@@ -1,0 +1,3 @@
+libbase16384.so.2 libbase16384 #MINVER#
+ decode@Base 2
+ encode@Base 2
