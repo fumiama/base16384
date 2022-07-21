@@ -25,8 +25,8 @@ Depends: ${misc:Depends}
 Description: Dynamic library of base16384
  This package provides .so file for base16384.
 
-Package: libbase16384-dev
+Package: libbase16384-2-dev
 Architecture: any
-Depends: ${misc:Depends}, libbase16384 (= ${binary:Version})
+Depends: ${misc:Depends}, libbase16384-2 (= ${binary:Version})
 Description: Header and static library of base16384
  This package provides development files for base16384.
