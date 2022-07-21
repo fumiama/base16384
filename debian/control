@@ -21,12 +21,12 @@ Description: Encode binary files to printable utf16be
 
 Package: libbase16384
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${misc:Depends}
 Description: Dynamic library of base16384
  This package provides .so file for base16384.
 
 Package: libbase16384-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libbase16384 (>= 2)
+Depends: ${misc:Depends}, libbase16384 (>= 2)
 Description: Header and static library of base16384
  This package provides development files for base16384.
