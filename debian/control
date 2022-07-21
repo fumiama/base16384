@@ -27,6 +27,6 @@ Description: Dynamic library of base16384
 
 Package: libbase16384-dev
 Architecture: any
-Depends: ${misc:Depends}, libbase16384 (>= 2)
+Depends: ${misc:Depends}, libbase16384 (= ${binary:Version})
 Description: Header and static library of base16384
  This package provides development files for base16384.
