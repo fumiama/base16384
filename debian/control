@@ -2,7 +2,7 @@ Source: base16384
 Section: utils
 Priority: optional
 Maintainer: Fumiama Minamoto <fumiama@foxmail.com>
-Build-Depends: debhelper-compat (= 13), cmake (>= 3)
+Build-Depends: debhelper-compat (>= 13), cmake (>= 3)
 Rules-Requires-Root: no
 Standards-Version: 4.6.1
 Homepage: https://github.com/fumiama/base16384
