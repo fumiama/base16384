@@ -1,3 +1,4 @@
 libbase16384.so.2 libbase16384-2 #MINVER#
+* Build-Depends-Package: libbase16384-2-dev
  decode@Base 2
  encode@Base 2
