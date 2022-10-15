@@ -1,14 +1,14 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: base16384
-Upstream-Contact: fumiama <fumiama@foxmail.com>
+Upstream-Contact: Fumiama Minamoto <fumiama@foxmail.com>
 Source: https://github.com/fumiama/base16384
 
 Files: *
-Copyright: 2022 fumiama <fumiama@foxmail.com>
+Copyright: Copyright (c) 2022 Fumiama Minamoto
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2022 fumiama <fumiama@foxmail.com>
+Copyright: Copyright (c) 2022 Fumiama Minamoto
 License: GPL-3.0+
 
 License: GPL-3.0+

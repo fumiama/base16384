@@ -1,7 +1,7 @@
 Source: base16384
 Section: utils
 Priority: optional
-Maintainer: fumiama <fumiama@foxmail.com>
+Maintainer: Fumiama Minamoto <fumiama@foxmail.com>
 Build-Depends: debhelper (>= 9), cmake (>= 3)
 Rules-Requires-Root: no
 Standards-Version: 4.4.1
