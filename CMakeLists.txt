@@ -10,9 +10,7 @@ if (${isBigEndian})
     add_definitions(-DWORDS_BIGENDIAN)
 endif()
 
-IF(NOT (CMAKE_SYSTEM_NAME MATCHES "Darwin"))
-    add_compile_options("-lc")
-ENDIF()
+add_link_options("-lc")
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_library(base16384 SHARED base1464.c)
