@@ -22,7 +22,7 @@ Description: Encode binary files to printable utf16be
 Package: libbase16384-2
 Architecture: any
 Section: libs
-Depends: ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Dynamic library of base16384
  This package provides library files for base16384 algorithm,
  which has 16384 Chinese characters (from \u4E00 to \u8DFF)
