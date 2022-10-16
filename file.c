@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 #ifdef _WIN32
 	#include <windows.h>
 #else
@@ -73,10 +74,8 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 				return base16384_err_write_file;
 			}
 		}
-		/* 由操作系统负责释放资源
-			fclose(fpo);
-			fclose(fp);
-		以缩短程序运行时间 */
+		fclose(fpo);
+		fclose(fp);
 	#ifndef _WIN32
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
@@ -95,10 +94,8 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 			return base16384_err_write_file;
 		}
 		munmap(input_file, (size_t)inputsize);
-		/* 由操作系统负责释放资源
-			fclose(fpo);
-			close(fd);
-		以缩短程序运行时间 */	
+		fclose(fpo);
+		close(fd);
 	}
 	#endif
 	return base16384_err_ok;
@@ -156,10 +153,8 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 				return base16384_err_write_file;
 			}
 		}
-		/* 由操作系统负责释放资源
-			fclose(fpo);
-			fclose(fp);
-		以缩短程序运行时间 */
+		fclose(fpo);
+		fclose(fp);
 	#ifndef _WIN32
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
@@ -176,10 +171,8 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 			return base16384_err_write_file;
 		}
 		munmap(input_file, (size_t)inputsize);
-		/* 由操作系统负责释放资源
-			fclose(fpo);
-			close(fd);
-		以缩短程序运行时间 */	
+		fclose(fpo);
+		close(fd);
 	}
 	#endif
 	return base16384_err_ok;

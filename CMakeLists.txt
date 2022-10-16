@@ -18,6 +18,14 @@ ELSE()
     add_library(base16384_s STATIC file.c base1432.c)
 ENDIF()
 
+if (MSVC)
+    # do nothing
+else()
+    # add hardening
+    target_compile_options(base16384 INTERFACE -Wl,-z,relro,-z,now -Wdate-time)
+    add_definitions(-D_FORTIFY_SOURCE=2)
+endif()
+
 set_target_properties(base16384_b PROPERTIES OUTPUT_NAME base16384)
 set_target_properties(base16384_s PROPERTIES OUTPUT_NAME base16384)
 set_target_properties(base16384   PROPERTIES VERSION ${CMAKE_PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
