@@ -18,7 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __cosmopolitan
 #include <stdint.h>
+#endif
 
 // base16384_err_t is the return value of base16384_en/decode_file
 enum base16384_err_t {
