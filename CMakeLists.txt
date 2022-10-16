@@ -10,14 +10,12 @@ if (${isBigEndian})
     add_definitions(-DWORDS_BIGENDIAN)
 endif()
 
-add_link_options("-lc")
-
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_library(base16384 SHARED base1464.c)
-    add_library(base16384_s STATIC base1464.c)
+    add_library(base16384 SHARED file.c base1464.c)
+    add_library(base16384_s STATIC file.c base1464.c)
 ELSE()
-    add_library(base16384 SHARED base1432.c)
-    add_library(base16384_s STATIC base1432.c)
+    add_library(base16384 SHARED file.c base1432.c)
+    add_library(base16384_s STATIC file.c base1432.c)
 ENDIF()
 
 set_target_properties(base16384_b PROPERTIES OUTPUT_NAME base16384)
