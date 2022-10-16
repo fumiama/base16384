@@ -82,9 +82,25 @@ int base16384_decode(const char* data, int dlen, char* buf, int blen);
 //    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
 base16384_err_t base16384_encode_file(const char* input, const char* output, char* encbuf, char* decbuf);
 
+// base16384_encode_fp encodes input file to output file.
+//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
+base16384_err_t base16384_encode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf);
+
+// base16384_encode_fd encodes input fd to output fd.
+//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
+base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* decbuf);
+
 // base16384_decode_file decodes input file to output file.
 //    use `-` to specify stdin/stdout
 //    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
 base16384_err_t base16384_decode_file(const char* input, const char* output, char* encbuf, char* decbuf);
+
+// base16384_decode_fp decodes input file to output file.
+//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
+base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf);
+
+// base16384_decode_fd decodes input fd to output fd.
+//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
+base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* decbuf);
 
 #endif

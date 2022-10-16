@@ -21,10 +21,12 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #ifdef _WIN32
 	#include <windows.h>
+	#include <io.h>
+	#include <process.h>
 #else
+	#include <unistd.h>
 	#include <sys/mman.h>
 #endif
 #endif
@@ -101,6 +103,47 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 	return base16384_err_ok;
 }
 
+base16384_err_t base16384_encode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf) {
+	if(!input) {
+		return base16384_err_fopen_input_file;
+	}
+	if(!output) {
+		return base16384_err_fopen_output_file;
+	}
+	off_t inputsize = BUFSIZ*1024/7*7;
+	int outputsize = base16384_encode_len(inputsize)+16;
+	size_t cnt = 0;
+	fputc(0xFE, output);
+	fputc(0xFF, output);
+	while((cnt = fread(encbuf, sizeof(char), inputsize, input))) {
+		int n = base16384_encode(encbuf, cnt, decbuf, outputsize);
+		if(fwrite(decbuf, n, 1, output) <= 0) {
+			return base16384_err_write_file;
+		}
+	}
+	return base16384_err_ok;
+}
+
+base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* decbuf) {
+	if(!input) {
+		return base16384_err_fopen_input_file;
+	}
+	if(!output) {
+		return base16384_err_fopen_output_file;
+	}
+	off_t inputsize = BUFSIZ*1024/7*7;
+	int outputsize = base16384_encode_len(inputsize)+16;
+	size_t cnt = 0;
+	write(output, "\xfe\xff", 2);
+	while((cnt = read(input, encbuf, inputsize))) {
+		int n = base16384_encode(encbuf, cnt, decbuf, outputsize);
+		if(write(output, decbuf, n) < n) {
+			return base16384_err_write_file;
+		}
+	}
+	return base16384_err_ok;
+}
+
 #define rm_head(fp) {\
 	int ch = fgetc(fp);\
 	if(ch == 0xFE) fgetc(fp);\
@@ -111,6 +154,7 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 
 static int is_next_end(FILE* fp) {
 	int ch = fgetc(fp);
+	if(ch == EOF) return 0;
 	if(ch == '=') return fgetc(fp);
 	ungetc(ch, fp);
 	return 0;
@@ -175,5 +219,67 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 		close(fd);
 	}
 	#endif
+	return base16384_err_ok;
+}
+
+base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf) {
+	if(!input) {
+		return base16384_err_fopen_input_file;
+	}
+	if(!output) {
+		return base16384_err_fopen_output_file;
+	}
+	off_t inputsize = BUFSIZ*1024/8*8;
+	int outputsize = base16384_decode_len(inputsize, 0)+16;
+	int cnt = 0;
+	int end = 0;
+	rm_head(input);
+	while((cnt = fread(decbuf, sizeof(char), inputsize, input))) {
+		if((end = is_next_end(input))) {
+			decbuf[cnt++] = '=';
+			decbuf[cnt++] = end;
+		}
+		if(fwrite(encbuf, base16384_decode(decbuf, cnt, encbuf, outputsize), 1, output) <= 0) {
+			return base16384_err_write_file;
+		}
+	}
+	return base16384_err_ok;
+}
+
+static int is_next_end_fd(int fd) {
+	char ch = 0;
+	read(fd, &ch, 1);
+	if(ch == '=') {
+		read(fd, &ch, 1);
+	}
+	return (int)ch;
+}
+
+base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* decbuf) {
+	if(!input) {
+		return base16384_err_fopen_input_file;
+	}
+	if(!output) {
+		return base16384_err_fopen_output_file;
+	}
+	off_t inputsize = BUFSIZ*1024/8*8;
+	int outputsize = base16384_decode_len(inputsize, 0)+16;
+	int cnt = 0;
+	int end = 0;
+	decbuf[0] = 0;
+	read(input, decbuf, 2);
+	if(decbuf[0] != (char)(0xfe)) cnt = 2;
+	while((cnt += read(input, decbuf+cnt, inputsize-cnt), cnt)) {
+		if((end = is_next_end_fd(input))) {
+			decbuf[cnt++] = '=';
+			decbuf[cnt++] = end;
+			return base16384_err_ok;
+		}
+		cnt = base16384_decode(decbuf, cnt, encbuf, outputsize);
+		if(write(output, encbuf, cnt) < cnt) {
+			return base16384_err_write_file;
+		}
+		cnt = 1;
+	}
 	return base16384_err_ok;
 }
