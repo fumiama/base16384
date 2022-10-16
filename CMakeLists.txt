@@ -22,7 +22,7 @@ if (MSVC)
     # do nothing
 else()
     # add hardening
-    target_compile_options(base16384 INTERFACE -Wl,-z,relro,-z,now -Wdate-time)
+    target_compile_options(base16384 PUBLIC -Wl,-z,now -Wdate-time)
     add_definitions(-D_FORTIFY_SOURCE=2)
 endif()
 
