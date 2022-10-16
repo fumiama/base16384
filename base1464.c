@@ -61,7 +61,7 @@
 
 // #define DEBUG
 
-int encode(const char* data, int dlen, char* buf, int blen) {
+int base16384_encode(const char* data, int dlen, char* buf, int blen) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
 	switch(offset) {	// 算上偏移标志字符占用的2字节
@@ -135,7 +135,7 @@ int encode(const char* data, int dlen, char* buf, int blen) {
 	return outlen;
 }
 
-int decode(const char* data, int dlen, char* buf, int blen) {
+int base16384_decode(const char* data, int dlen, char* buf, int blen) {
 	int outlen = dlen;
 	int offset = 0;
 	if(data[dlen-2] == '=') {
