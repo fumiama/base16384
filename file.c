@@ -154,6 +154,7 @@ base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* d
 
 static int is_next_end(FILE* fp) {
 	int ch = fgetc(fp);
+	if(ch == EOF) return 0;
 	if(ch == '=') return fgetc(fp);
 	ungetc(ch, fp);
 	return 0;
@@ -246,13 +247,12 @@ base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, cha
 }
 
 static int is_next_end_fd(int fd) {
-	char ch;
+	char ch = 0;
 	read(fd, &ch, 1);
 	if(ch == '=') {
 		read(fd, &ch, 1);
-		return (int)ch;
 	}
-	return 0;
+	return (int)ch;
 }
 
 base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* decbuf) {
