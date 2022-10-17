@@ -20,6 +20,7 @@
 
 #ifndef __cosmopolitan
 #include <stdint.h>
+#include <stdio.h>
 #endif
 
 // base16384_err_t is the return value of base16384_en/decode_file
