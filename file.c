@@ -275,9 +275,8 @@ base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* d
 			if((end = is_next_end_fd(input))) {
 				decbuf[cnt++] = '=';
 				decbuf[cnt++] = end;
-				return base16384_err_ok;
-			}
-			end = 1;
+				end = 0;
+			} else end = 1;
 		} else end = 0;
 		cnt = base16384_decode(decbuf, cnt, encbuf, outputsize);
 		if(write(output, encbuf, cnt) < cnt) {
