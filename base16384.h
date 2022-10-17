@@ -32,6 +32,7 @@ enum base16384_err_t {
 	base16384_err_write_file,
 	base16384_err_open_input_file,
 	base16384_err_map_input_file,
+	base16384_err_read_file,
 };
 // base16384_err_t is the return value of base16384_en/decode_file
 typedef enum base16384_err_t base16384_err_t;

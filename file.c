@@ -35,7 +35,7 @@
 #ifdef __cosmopolitan
 #define get_file_size(filepath) ((off_t)GetFileSize(filepath))
 #else
-static off_t get_file_size(const char* filepath) {
+static inline off_t get_file_size(const char* filepath) {
     struct stat statbuf;
     return stat(filepath, &statbuf)?-1:statbuf.st_size;
 }
@@ -152,7 +152,7 @@ base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* d
 
 #define skip_offset(input_file) ((input_file[0]==(char)0xFE)?2:0)
 
-static int is_next_end(FILE* fp) {
+static inline int is_next_end(FILE* fp) {
 	int ch = fgetc(fp);
 	if(ch == EOF) return 0;
 	if(ch == '=') return fgetc(fp);
@@ -246,7 +246,7 @@ base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, cha
 	return base16384_err_ok;
 }
 
-static int is_next_end_fd(int fd) {
+static inline int is_next_end_fd(int fd) {
 	char ch = 0;
 	read(fd, &ch, 1);
 	if(ch == '=') {
@@ -267,9 +267,11 @@ base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* d
 	int cnt = 0;
 	int end = 0;
 	decbuf[0] = 0;
-	read(input, decbuf, 2);
+	if(read(input, decbuf, 2) < 2) {
+		return base16384_err_read_file;
+	}
 	if(decbuf[0] != (char)(0xfe)) cnt = 2;
-	while((end = read(input, decbuf+cnt, inputsize-cnt), cnt) > 0 || cnt > 0) {
+	while((end = read(input, decbuf+cnt, inputsize-cnt)) > 0 || cnt > 0) {
 		if(end > 0) {
 			cnt += end;
 			if((end = is_next_end_fd(input))) {

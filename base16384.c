@@ -103,6 +103,7 @@ int main(int argc, char** argv) {
 		case base16384_err_write_file: perror("base16384_err_write_file"); break;
 		case base16384_err_open_input_file: perror("base16384_err_open_input_file"); break;
 		case base16384_err_map_input_file: perror("base16384_err_map_input_file"); break;
+		case base16384_err_read_file: perror("base16384_err_read_file"); break;
 		default: perror("base16384"); break;
 	}
     return exitstat;
