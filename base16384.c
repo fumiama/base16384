@@ -39,7 +39,7 @@ unsigned long get_start_ms() {
 #endif
 
 static void print_usage() {
-	puts("Copyright (c) 2022 Fumiama Minamoto.\nBase16384 2.2.0 (Oct 16th 2022). Usage:");
+	puts("Copyright (c) 2022 Fumiama Minamoto.\nBase16384 2.2.2 (Dec 14th 2022). Usage:");
 	puts("base16384 [-edt] [inputfile] [outputfile]");
 	puts("  -e\t\tencode");
 	puts("  -d\t\tdecode");

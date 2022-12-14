@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(base16384 VERSION 2.2.0)
-SET(CMAKE_BUILD_TYPE "Release")
+project(base16384 VERSION 2.2.2)
 
 add_executable(base16384_b base16384.c)
 
@@ -17,14 +16,6 @@ ELSE()
     add_library(base16384 SHARED file.c base1432.c)
     add_library(base16384_s STATIC file.c base1432.c)
 ENDIF()
-
-if (MSVC)
-    # do nothing
-else()
-    # add hardening
-    target_compile_options(base16384 PUBLIC -Wl,-z,now -Wdate-time)
-    add_definitions(-D_FORTIFY_SOURCE=2)
-endif()
 
 set_target_properties(base16384_b PROPERTIES OUTPUT_NAME base16384)
 set_target_properties(base16384_s PROPERTIES OUTPUT_NAME base16384)
