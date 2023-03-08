@@ -26,6 +26,11 @@ Save more space and since the code 0x0000 is encoded to "一", finding zero spac
 sudo apt install base16384
 ```
 
+### Install from Homebrew 从 Homebrew 安装
+```bash
+brew install base16384
+```
+
 ### Install from my PPA in Ubuntu 乌班图下从我的 PPA 安装
 ```bash
 sudo add-apt-repository ppa:fumiama/ppa
