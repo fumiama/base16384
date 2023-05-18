@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 2.8.12)
+if (POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif (POLICY CMP0048)
 project(base16384 VERSION 2.2.2)
 
 add_executable(base16384_b base16384.c)
