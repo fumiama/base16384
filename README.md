@@ -76,21 +76,21 @@ base16384 [-edt] [inputfile] [outputfile]
 ```
 
 ## Examples 用例
-1. Encode simple text
+1. Encode simple text 简单文本编码
 
 ```bash
 echo -n "1234567" | base16384 -e - - | iconv -f utf-16be -t utf-8
 婌焳廔萷
 ```
 
-3. Decode simple text
+3. Decode simple text 简单文本解码
 
 ```bash
 echo -n "婌焳廔萷" | iconv -f utf-8 -t utf-16be | ./base16384 -d - -
 1234567
 ```
 
-3. Encode file
+3. Encode file 编码文件
 
 The text below is the encoding of the base16384 itself on MacOS 12.6 arm64. It is clear to see the strucutre of the binary file.
 

@@ -39,7 +39,7 @@
 #  define be16toh(x) betoh16(x)
 #  define be32toh(x) betoh32(x)
 #endif
-#ifdef __MAC_10_0
+#ifdef __APPLE__
 #  define be16toh(x) ntohs(x)
 #  define be32toh(x) ntohl(x)
 #  define htobe16(x) ntohs(x)
