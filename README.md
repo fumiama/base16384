@@ -86,7 +86,7 @@ echo -n "1234567" | base16384 -e - - | iconv -f utf-16be -t utf-8
 3. Decode simple text 简单文本解码
 
 ```bash
-echo -n "婌焳廔萷" | iconv -f utf-8 -t utf-16be | ./base16384 -d - -
+echo -n "婌焳廔萷" | iconv -f utf-8 -t utf-16be | base16384 -d - -
 1234567
 ```
 
