@@ -19,7 +19,7 @@ ENDIF()
 
 set_target_properties(base16384_b PROPERTIES OUTPUT_NAME base16384)
 set_target_properties(base16384_s PROPERTIES OUTPUT_NAME base16384)
-set_target_properties(base16384   PROPERTIES VERSION ${CMAKE_PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(base16384   PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
 target_link_libraries(base16384_b base16384_s)
 
