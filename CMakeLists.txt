@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.0.0)
 project(base16384 VERSION 2.2.2)
 
 add_executable(base16384_b base16384.c)
@@ -19,7 +19,7 @@ ENDIF()
 
 set_target_properties(base16384_b PROPERTIES OUTPUT_NAME base16384)
 set_target_properties(base16384_s PROPERTIES OUTPUT_NAME base16384)
-set_target_properties(base16384   PROPERTIES VERSION ${CMAKE_PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(base16384   PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
 target_link_libraries(base16384_b base16384_s)
 
