@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.12.0)
 project(base16384 VERSION 2.2.2)
 
 add_executable(base16384_b base16384.c)
