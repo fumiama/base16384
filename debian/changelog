@@ -1,3 +1,15 @@
+base16384 (2.2.2-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Fumiama Minamoto <fumiama@foxmail.com>  Wed, 14 Dec 2022 13:27:20 +0800
+
+base16384 (2.2.1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Fumiama Minamoto <fumiama@foxmail.com>  Thu, 08 Dec 2022 23:40:58 +0800
+
 base16384 (2.2.0-1) unstable; urgency=medium
 
   * Initial Release. Closes: #1010055 (ITP).
