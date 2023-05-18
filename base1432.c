@@ -39,7 +39,7 @@
 #  define be16toh(x) betoh16(x)
 #  define be32toh(x) betoh32(x)
 #endif
-#ifdef __MAC_10_0
+#ifdef __APPLE__
 #  define be16toh(x) ntohs(x)
 #  define be32toh(x) ntohl(x)
 #  define htobe16(x) ntohs(x)
@@ -192,7 +192,7 @@ int base16384_decode(const char* data, int dlen, char* buf, int blen) {
 			if(offset--) {
 				buf[i++] = ((sum & 0x000f0000) >> 12) | ((sum & 0xf0000000) >> 28);
 				if(offset--) {
-					buf[i++] = (sum & 0x0f000000) >> 20;
+					buf[i] = (sum & 0x0f000000) >> 20;
 					// 这里有读取越界
 					sum = vals[n];
 					sum -= 0x0000004e;

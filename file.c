@@ -42,18 +42,20 @@ static inline off_t get_file_size(const char* filepath) {
 }
 #endif
 
+#define is_standard_io(filename) (*(uint16_t*)(filename) == *(uint16_t*)"-")
+
 base16384_err_t base16384_encode_file(const char* input, const char* output, char* encbuf, char* decbuf) {
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
-	if(*(uint16_t*)input == *(uint16_t*)"-") { // read from stdin
+	if(is_standard_io(input)) { // read from stdin
 		inputsize = 0;
 		fp = stdin;
 	} else inputsize = get_file_size(input);
 	if(inputsize < 0) {
 		return base16384_err_get_file_size;
 	}
-	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
+	fpo = is_standard_io(output)?stdout:fopen(output, "wb");
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
@@ -77,12 +79,12 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 				return base16384_err_write_file;
 			}
 		}
-		fclose(fpo);
-		fclose(fp);
+		if(!is_standard_io(output)) fclose(fpo);
+		if(!is_standard_io(input)) fclose(fp);
 	#ifndef _WIN32
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
-		if(fd <= 0) {
+		if(fd < 0) {
 			return base16384_err_open_input_file;
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -97,7 +99,7 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 			return base16384_err_write_file;
 		}
 		munmap(input_file, (size_t)inputsize);
-		fclose(fpo);
+		if(!is_standard_io(output)) fclose(fpo);
 		close(fd);
 	}
 	#endif
@@ -148,7 +150,7 @@ base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* d
 #define rm_head(fp) {\
 	int ch = fgetc(fp);\
 	if(ch == 0xFE) fgetc(fp);\
-	else rewind(fp);\
+	else ungetc(ch, fp);\
 }
 
 #define skip_offset(input_file) ((input_file[0]==(char)0xFE)?2:0)
@@ -165,14 +167,14 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
-	if(*(uint16_t*)input == *(uint16_t*)"-") { // read from stdin
+	if(is_standard_io(input)) { // read from stdin
 		inputsize = 0;
 		fp = stdin;
 	} else inputsize = get_file_size(input);
 	if(inputsize < 0) {
 		return base16384_err_get_file_size;
 	}
-	fpo = (*(uint16_t*)output == *(uint16_t*)"-")?stdout:fopen(output, "wb");
+	fpo = is_standard_io(output)?stdout:fopen(output, "wb");
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
@@ -198,12 +200,12 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 				return base16384_err_write_file;
 			}
 		}
-		fclose(fpo);
-		fclose(fp);
+		if(!is_standard_io(output)) fclose(fpo);
+		if(!is_standard_io(input)) fclose(fp);
 	#ifndef _WIN32
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
-		if(fd <= 0) {
+		if(fd < 0) {
 			return base16384_err_open_input_file;
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -216,7 +218,7 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 			return base16384_err_write_file;
 		}
 		munmap(input_file, (size_t)inputsize);
-		fclose(fpo);
+		if(!is_standard_io(output)) fclose(fpo);
 		close(fd);
 	}
 	#endif
