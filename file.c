@@ -63,7 +63,7 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 	}
 	if(!inputsize || inputsize > BASE16384_ENCBUFSZ) { // stdin or big file, use encbuf & fread
 		inputsize = BASE16384_ENCBUFSZ/8*8;
-		#ifdef _WIN32
+		#if defined _WIN32 || defined __cosmopolitan
 	}
 		#endif
 		if(!fp) fp = fopen(input, "rb");
@@ -82,7 +82,7 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 		}
 		if(!is_standard_io(output)) fclose(fpo);
 		if(!is_standard_io(input)) fclose(fp);
-	#ifndef _WIN32
+	#if !defined _WIN32 && !defined __cosmopolitan
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
 		if(fd < 0) {
@@ -179,7 +179,7 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 	}
 	if(!inputsize || inputsize > BASE16384_DECBUFSZ) { // stdin or big file, use decbuf & fread
 		inputsize = BASE16384_DECBUFSZ/8*8;
-		#ifdef _WIN32
+		#if defined _WIN32 || defined __cosmopolitan
 	}
 		#endif
 		if(!fp) fp = fopen(input, "rb");
@@ -200,7 +200,7 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 		}
 		if(!is_standard_io(output)) fclose(fpo);
 		if(!is_standard_io(input)) fclose(fp);
-	#ifndef _WIN32
+	#if !defined _WIN32 && !defined __cosmopolitan
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
 		if(fd < 0) {
