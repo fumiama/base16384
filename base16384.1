@@ -3,7 +3,7 @@
 base16384 \- Encode binary files to printable utf16be
 .SH SYNOPSIS
 .B base16384
--[e|d] <\fIinputfile\fR> <\fIoutputfile\fR>
+-[e|d|t] <\fIinputfile\fR> <\fIoutputfile\fR>
 .SH DESCRIPTION
 .LP
 There are
@@ -28,6 +28,12 @@ to
 .TP 0.5i
 \fB\-e\fR
 Read data from \fIinputfile\fR and encode them into \fIoutputfile\fR.
+.TP 0.5i
+\fB\-d\fR
+Read data from \fIinputfile\fR and decode them into \fIoutputfile\fR.
+.TP 0.5i
+\fB\-t\fR
+Show spend time.
 .TP 0.5i
 \fBinputfile\fR
 An absolute or relative file path. Specially, pass - to read from stdin.
@@ -59,6 +65,9 @@ Map input file error.
 .TP 0.5i
 \fB7\fR
 Write file error in mmap.
+.TP 0.5i
+\fB8\fR
+Invalid input/output filename.
 .SH "SEE ALSO"
 https://github.com/fumiama/base16384
 .SH BUGS
@@ -68,7 +77,7 @@ on github.
 .SH AUTHOR
 This manual page contributed by Fumiama Minamoto.
 .SH "COPYRIGHT"
-Copyright \(co 2022, Fumiama Minamoto
+Copyright \(co 2022-2023, Fumiama Minamoto
 This file is part of
 .IR "base16384" .
 .LP

@@ -1,6 +1,6 @@
 /* file.c
  * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
- * Copyright (c) 2022 Fumiama Minamoto.
+ * Copyright (c) 2022-2023 Fumiama Minamoto.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #ifdef _WIN32
@@ -48,6 +49,7 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
+	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) return base16384_err_invalid_file_name;
 	if(is_standard_io(input)) { // read from stdin
 		inputsize = 0;
 		fp = stdin;
@@ -59,8 +61,8 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
-	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use encbuf & fread
-		inputsize = BUFSIZ*1024/7*7;
+	if(!inputsize || inputsize > BASE16384_ENCBUFSZ) { // stdin or big file, use encbuf & fread
+		inputsize = BASE16384_ENCBUFSZ/8*8;
 		#ifdef _WIN32
 	}
 		#endif
@@ -69,12 +71,11 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 			return base16384_err_fopen_input_file;
 		}
 
-		int outputsize = base16384_encode_len(inputsize)+16;
 		size_t cnt = 0;
 		fputc(0xFE, fpo);
 		fputc(0xFF, fpo);
 		while((cnt = fread(encbuf, sizeof(char), inputsize, fp)) > 0) {
-			int n = base16384_encode(encbuf, cnt, decbuf, outputsize);
+			int n = base16384_encode(encbuf, cnt, decbuf);
 			if(fwrite(decbuf, n, 1, fpo) <= 0) {
 				return base16384_err_write_file;
 			}
@@ -87,14 +88,13 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 		if(fd < 0) {
 			return base16384_err_open_input_file;
 		}
-		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
+		char *input_file = mmap(NULL, (size_t)inputsize+16, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
 			return base16384_err_map_input_file;
 		}
-		int outputsize = base16384_encode_len(inputsize)+16;
 		fputc(0xFE, fpo);
 		fputc(0xFF, fpo);
-		int n = base16384_encode(input_file, (int)inputsize, decbuf, outputsize);
+		int n = base16384_encode(input_file, (int)inputsize, decbuf);
 		if(fwrite(decbuf, n, 1, fpo) <= 0) {
 			return base16384_err_write_file;
 		}
@@ -113,13 +113,12 @@ base16384_err_t base16384_encode_fp(FILE* input, FILE* output, char* encbuf, cha
 	if(!output) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BUFSIZ*1024/7*7;
-	int outputsize = base16384_encode_len(inputsize)+16;
+	off_t inputsize = BASE16384_ENCBUFSZ/8*8;
 	size_t cnt = 0;
 	fputc(0xFE, output);
 	fputc(0xFF, output);
 	while((cnt = fread(encbuf, sizeof(char), inputsize, input)) > 0) {
-		int n = base16384_encode(encbuf, cnt, decbuf, outputsize);
+		int n = base16384_encode(encbuf, cnt, decbuf);
 		if(fwrite(decbuf, n, 1, output) <= 0) {
 			return base16384_err_write_file;
 		}
@@ -134,12 +133,11 @@ base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* d
 	if(output < 0) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BUFSIZ*1024/7*7;
-	int outputsize = base16384_encode_len(inputsize)+16;
+	off_t inputsize = BASE16384_ENCBUFSZ/8*8;
 	size_t cnt = 0;
 	write(output, "\xfe\xff", 2);
 	while((cnt = read(input, encbuf, inputsize)) > 0) {
-		int n = base16384_encode(encbuf, cnt, decbuf, outputsize);
+		int n = base16384_encode(encbuf, cnt, decbuf);
 		if(write(output, decbuf, n) < n) {
 			return base16384_err_write_file;
 		}
@@ -167,6 +165,7 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
+	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) return base16384_err_invalid_file_name;
 	if(is_standard_io(input)) { // read from stdin
 		inputsize = 0;
 		fp = stdin;
@@ -178,8 +177,8 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
-	if(!inputsize || inputsize > BUFSIZ*1024) { // stdin or big file, use decbuf & fread
-		inputsize = BUFSIZ*1024/8*8;
+	if(!inputsize || inputsize > BASE16384_DECBUFSZ) { // stdin or big file, use decbuf & fread
+		inputsize = BASE16384_DECBUFSZ/8*8;
 		#ifdef _WIN32
 	}
 		#endif
@@ -187,7 +186,6 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 		if(!fp) {
 			return base16384_err_fopen_input_file;
 		}
-		int outputsize = base16384_decode_len(inputsize, 0)+16;
 		int cnt = 0;
 		int end = 0;
 		rm_head(fp);
@@ -196,7 +194,7 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 				decbuf[cnt++] = '=';
 				decbuf[cnt++] = end;
 			}
-			if(fwrite(encbuf, base16384_decode(decbuf, cnt, encbuf, outputsize), 1, fpo) <= 0) {
+			if(fwrite(encbuf, base16384_decode(decbuf, cnt, encbuf), 1, fpo) <= 0) {
 				return base16384_err_write_file;
 			}
 		}
@@ -208,13 +206,12 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 		if(fd < 0) {
 			return base16384_err_open_input_file;
 		}
-		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
+		char *input_file = mmap(NULL, (size_t)inputsize+16, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
 			return base16384_err_map_input_file;
 		}
-		int outputsize = base16384_decode_len(inputsize, 0)+16;
 		int off = skip_offset(input_file);
-		if(fwrite(encbuf, base16384_decode(input_file+off, inputsize-off, encbuf, outputsize), 1, fpo) <= 0) {
+		if(fwrite(encbuf, base16384_decode(input_file+off, inputsize-off, encbuf), 1, fpo) <= 0) {
 			return base16384_err_write_file;
 		}
 		munmap(input_file, (size_t)inputsize);
@@ -232,8 +229,7 @@ base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, cha
 	if(!output) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BUFSIZ*1024/8*8;
-	int outputsize = base16384_decode_len(inputsize, 0)+16;
+	off_t inputsize = BASE16384_DECBUFSZ/8*8;
 	int cnt = 0;
 	int end = 0;
 	rm_head(input);
@@ -242,7 +238,7 @@ base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, cha
 			decbuf[cnt++] = '=';
 			decbuf[cnt++] = end;
 		}
-		if(fwrite(encbuf, base16384_decode(decbuf, cnt, encbuf, outputsize), 1, output) <= 0) {
+		if(fwrite(encbuf, base16384_decode(decbuf, cnt, encbuf), 1, output) <= 0) {
 			return base16384_err_write_file;
 		}
 	}
@@ -265,8 +261,7 @@ base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* d
 	if(output < 0) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BUFSIZ*1024/8*8;
-	int outputsize = base16384_decode_len(inputsize, 0)+16;
+	off_t inputsize = BASE16384_DECBUFSZ/8*8;
 	int cnt = 0;
 	int end = 0;
 	decbuf[0] = 0;
@@ -283,7 +278,7 @@ base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* d
 				end = 0;
 			} else end = 1;
 		} else end = 0;
-		cnt = base16384_decode(decbuf, cnt, encbuf, outputsize);
+		cnt = base16384_decode(decbuf, cnt, encbuf);
 		if(write(output, encbuf, cnt) < cnt) {
 			return base16384_err_write_file;
 		}
