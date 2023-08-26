@@ -43,7 +43,7 @@ typedef enum base16384_err_t base16384_err_t;
 
 #undef define_base16384_err_t
 
-#define BASE16384_ENCBUFSZ (BUFSIZ*1024/7*7)
+#define BASE16384_ENCBUFSZ (BUFSIZ*1024/7*7+7)
 #define BASE16384_DECBUFSZ (BUFSIZ*1024/8*8+16)
 
 // base16384_encode_len calc min buf size to fill encode result

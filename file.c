@@ -62,7 +62,7 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 		return base16384_err_fopen_output_file;
 	}
 	if(!inputsize || inputsize > BASE16384_ENCBUFSZ) { // stdin or big file, use encbuf & fread
-		inputsize = BASE16384_ENCBUFSZ/8*8;
+		inputsize = BASE16384_ENCBUFSZ-7;
 		#if defined _WIN32 || defined __cosmopolitan
 	}
 		#endif
@@ -113,7 +113,7 @@ base16384_err_t base16384_encode_fp(FILE* input, FILE* output, char* encbuf, cha
 	if(!output) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BASE16384_ENCBUFSZ/8*8;
+	off_t inputsize = BASE16384_ENCBUFSZ-7;
 	size_t cnt = 0;
 	fputc(0xFE, output);
 	fputc(0xFF, output);
@@ -133,7 +133,7 @@ base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* d
 	if(output < 0) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BASE16384_ENCBUFSZ/8*8;
+	off_t inputsize = BASE16384_ENCBUFSZ-7;
 	size_t cnt = 0;
 	write(output, "\xfe\xff", 2);
 	while((cnt = read(input, encbuf, inputsize)) > 0) {
