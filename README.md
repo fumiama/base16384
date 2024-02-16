@@ -1,7 +1,7 @@
 # base16384
 > **Note**: This project used the awesome cross-platform binary compiling tool [cosmopolitan](https://github.com/jart/cosmopolitan)
 
-> Alternatives: [Go](https://github.com/fumiama/go-base16384), [Python](https://github.com/synodriver/pybase16384), [Android](https://github.com/fumiama/android-base16384), [TypeScript](https://github.com/shigma/base16384.js), [Lua(binding)](https://github.com/synodriver/lua-base16384), [Lua(pure)](https://github.com/Yiwen-Chan/base16384), [C#](https://github.com/lc6464/Base16384.Net), [Rust](https://github.com/Wybxc/base16384-rs)
+> Alternatives: [Go](https://github.com/fumiama/go-base16384), [Python](https://github.com/synodriver/pybase16384), [Android](https://github.com/fumiama/android-base16384), [TypeScript](https://github.com/shigma/base16384.js), [Lua(binding)](https://github.com/synodriver/lua-base16384), [Lua(pure)](https://github.com/Yiwen-Chan/base16384), [C#](https://github.com/lc6464/Base16384.Net), [Rust](https://github.com/Wybxc/base16384-rs), [Swift](https://github.com/oboard/swift-ui-base16384)
 
 Encode binary file to printable utf16be, and vice versa.
 
