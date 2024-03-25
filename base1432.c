@@ -1,6 +1,6 @@
 /* base1432.c
  * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
- * Copyright (c) 2022 Fumiama Minamoto.
+ * Copyright (c) 2022-2023 Fumiama Minamoto.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@
 
 // #define DEBUG
 
-int base16384_encode(const char* data, int dlen, char* buf, int blen) {
+int base16384_encode(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
 	switch(offset) {	// 算上偏移标志字符占用的2字节
@@ -140,7 +140,7 @@ int base16384_encode(const char* data, int dlen, char* buf, int blen) {
 	return outlen;
 }
 
-int base16384_decode(const char* data, int dlen, char* buf, int blen) {
+int base16384_decode(const char* data, int dlen, char* buf) {
 	int outlen = dlen;
 	int offset = 0;
 	if(data[dlen-2] == '=') {
@@ -194,7 +194,11 @@ int base16384_decode(const char* data, int dlen, char* buf, int blen) {
 				if(offset--) {
 					buf[i] = (sum & 0x0f000000) >> 20;
 					// 这里有读取越界
-					sum = vals[n];
+					#ifdef WORDS_BIGENDIAN
+						sum = __builtin_bswap32(vals[n]);
+					#else
+						sum = vals[n];
+					#endif
 					sum -= 0x0000004e;
 					buf[i++] |= (sum & 0x0000003c) >> 2;
 					if(offset--) {

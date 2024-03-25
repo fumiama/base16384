@@ -3,7 +3,7 @@
 
 /* base16384.h
  * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
- * Copyright (c) 2022 Fumiama Minamoto.
+ * Copyright (c) 2022-2023 Fumiama Minamoto.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,22 +24,27 @@
 #include <stdio.h>
 #endif
 
+#define define_base16384_err_t(n) base16384_err_##n
+
 // base16384_err_t is the return value of base16384_en/decode_file
 enum base16384_err_t {
-	base16384_err_ok,
-	base16384_err_get_file_size,
-	base16384_err_fopen_output_file,
-	base16384_err_fopen_input_file,
-	base16384_err_write_file,
-	base16384_err_open_input_file,
-	base16384_err_map_input_file,
-	base16384_err_read_file,
+	define_base16384_err_t(ok),
+	define_base16384_err_t(get_file_size),
+	define_base16384_err_t(fopen_output_file),
+	define_base16384_err_t(fopen_input_file),
+	define_base16384_err_t(write_file),
+	define_base16384_err_t(open_input_file),
+	define_base16384_err_t(map_input_file),
+	define_base16384_err_t(read_file),
+	define_base16384_err_t(invalid_file_name),
 };
 // base16384_err_t is the return value of base16384_en/decode_file
 typedef enum base16384_err_t base16384_err_t;
 
-#define BASE16384_ENCBUFSZ (BUFSIZ*1024/7*7)
-#define BASE16384_DECBUFSZ (BUFSIZ*1024/8*8+2)
+#undef define_base16384_err_t
+
+#define BASE16384_ENCBUFSZ (BUFSIZ*1024/7*7+7)
+#define BASE16384_DECBUFSZ (BUFSIZ*1024/8*8+16)
 
 // base16384_encode_len calc min buf size to fill encode result
 static inline int base16384_encode_len(int dlen) {
@@ -75,10 +80,10 @@ static inline int base16384_decode_len(int dlen, int offset) {
 }
 
 // base16384_encode encodes data and write result into buf
-int base16384_encode(const char* data, int dlen, char* buf, int blen);
+int base16384_encode(const char* data, int dlen, char* buf);
 
 // base16384_decode decodes data and write result into buf
-int base16384_decode(const char* data, int dlen, char* buf, int blen);
+int base16384_decode(const char* data, int dlen, char* buf);
 
 // base16384_encode_file encodes input file to output file.
 //    use `-` to specify stdin/stdout

@@ -1,6 +1,6 @@
 /* base16384.c
  * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
- * Copyright (c) 2022 Fumiama Minamoto.
+ * Copyright (c) 2022-2023 Fumiama Minamoto.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ unsigned long get_start_ms() {
 #endif
 
 static void print_usage() {
-	puts("Copyright (c) 2022-2023 Fumiama Minamoto.\nBase16384 2.2.3 (May 18th 2023). Usage:");
+	puts("Copyright (c) 2022-2023 Fumiama Minamoto.\nBase16384 2.2.5 (August 26th 2023). Usage:");
 	puts("base16384 [-edt] [inputfile] [outputfile]");
 	puts("  -e\t\tencode");
 	puts("  -d\t\tdecode");
@@ -97,15 +97,18 @@ int main(int argc, char** argv) {
 			printf("spend time: %lums\n", get_start_ms() - t);
 		#endif
 	}
+	#define print_base16384_err(n) case base16384_err_##n: perror("base16384_err_"#n); break
 	if(exitstat) switch(exitstat) {
-		case base16384_err_get_file_size: perror("base16384_err_get_file_size"); break;
-		case base16384_err_fopen_output_file: perror("base16384_err_fopen_output_file"); break;
-		case base16384_err_fopen_input_file: perror("base16384_err_fopen_input_file"); break;
-		case base16384_err_write_file: perror("base16384_err_write_file"); break;
-		case base16384_err_open_input_file: perror("base16384_err_open_input_file"); break;
-		case base16384_err_map_input_file: perror("base16384_err_map_input_file"); break;
-		case base16384_err_read_file: perror("base16384_err_read_file"); break;
+		print_base16384_err(get_file_size);
+		print_base16384_err(fopen_output_file);
+		print_base16384_err(fopen_input_file);
+		print_base16384_err(write_file);
+		print_base16384_err(open_input_file);
+		print_base16384_err(map_input_file);
+		print_base16384_err(read_file);
+		print_base16384_err(invalid_file_name);
 		default: perror("base16384"); break;
 	}
+	#undef print_base16384_err
     return exitstat;
 }
