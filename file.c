@@ -1,6 +1,6 @@
 /* file.c
  * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
- * Copyright (c) 2022-2023 Fumiama Minamoto.
+ * Copyright (c) 2022-2024 Fumiama Minamoto.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 #ifdef _WIN32
 	#include <windows.h>
 	#include <io.h>
@@ -33,6 +34,7 @@
 #endif
 #endif
 #include "base16384.h"
+#include "binary.h"
 
 #ifdef __cosmopolitan
 #define get_file_size(filepath) ((off_t)GetFileSize(filepath))
@@ -45,11 +47,77 @@ static inline off_t get_file_size(const char* filepath) {
 
 #define is_standard_io(filename) (*(uint16_t*)(filename) == *(uint16_t*)"-")
 
-base16384_err_t base16384_encode_file(const char* input, const char* output, char* encbuf, char* decbuf) {
+static inline uint32_t calc_sum(uint32_t sum, size_t cnt, char* encbuf) {
+	uint32_t i;
+	#ifdef DEBUG
+		fprintf(stderr, "cnt: %zu, roundin: %08x, ", cnt, sum);
+	#endif
+	for(i = 0; i < cnt/sizeof(sum); i++) {
+		#ifdef DEBUG
+			if (!i) {
+				fprintf(stderr, "firstval: %08x, ", htobe32(((uint32_t*)encbuf)[i]));
+			}
+		#endif
+		sum += LEFTROTATE(htobe32(((uint32_t*)encbuf)[i]), encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "roundmid: %08x", sum);
+	#endif
+	size_t rem = cnt % sizeof(sum);
+	if(rem) {
+		uint32_t x = htobe32(((uint32_t*)encbuf)[i]) & (0xffffffff << (8*(sizeof(sum)-rem)));
+		sum += LEFTROTATE(x, encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
+		#ifdef DEBUG
+			fprintf(stderr, ", roundrem:%08x\n", sum);
+		#endif
+	}
+	#ifdef DEBUG
+		else fprintf(stderr, "\n");
+	#endif
+	return sum;
+}
+
+static inline uint32_t calc_and_embed_sum(uint32_t sum, size_t cnt, char* encbuf) {
+	sum = calc_sum(sum, cnt, encbuf);
+	if(cnt%7) { // last encode
+		*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
+	}
+	return sum;
+}
+
+static inline int calc_and_check_sum(uint32_t* s, size_t cnt, char* encbuf) {
+	uint32_t sum = calc_sum(*s, cnt, encbuf);
+	if(cnt%7) { // is last decode block
+		int shift = (int[]){0, 26, 20, 28, 22, 30, 24}[cnt%7];
+		uint32_t sum_read = be32toh((*(uint32_t*)(&encbuf[cnt]))) >> shift;
+		sum >>= shift;
+		#ifdef DEBUG
+			fprintf(stderr, "cntrm: %lu, mysum: %08x, sumrd: %08x\n", cnt%7, sum, sum_read);
+		#endif
+		return sum != sum_read;
+	}
+	*s = sum;
+	return 0;
+}
+
+#define goto_base16384_file_detailed_cleanup(method, reason, dobeforereturn) { \
+	errnobak = errno; \
+	retval = reason; \
+	dobeforereturn; \
+	goto base16384_##method##_file_detailed_cleanup; \
+}
+
+base16384_err_t base16384_encode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag) {
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
-	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) return base16384_err_invalid_file_name;
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	int errnobak = 0;
+	base16384_err_t retval = base16384_err_ok;
+	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
+		errno = EINVAL;
+		return base16384_err_invalid_file_name;
+	}
 	if(is_standard_io(input)) { // read from stdin
 		inputsize = 0;
 		fp = stdin;
@@ -61,64 +129,81 @@ base16384_err_t base16384_encode_file(const char* input, const char* output, cha
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
-	if(!inputsize || inputsize > BASE16384_ENCBUFSZ) { // stdin or big file, use encbuf & fread
-		inputsize = BASE16384_ENCBUFSZ-7;
+	if(!inputsize || inputsize > _BASE16384_ENCBUFSZ) { // stdin or big file, use encbuf & fread
+		inputsize = _BASE16384_ENCBUFSZ;
 		#if defined _WIN32 || defined __cosmopolitan
 	}
 		#endif
 		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
-			return base16384_err_fopen_input_file;
+			goto_base16384_file_detailed_cleanup(encode, base16384_err_fopen_input_file, {});
 		}
 
-		size_t cnt = 0;
-		fputc(0xFE, fpo);
-		fputc(0xFF, fpo);
+		if(!(flag&BASE16384_FLAG_NOHEADER)) {
+			fputc(0xFE, fpo);
+			fputc(0xFF, fpo);
+		}
+		#ifdef DEBUG
+			inputsize = 917504;
+			fprintf(stderr, "inputsize: %lld\n", inputsize);
+		#endif
+		size_t cnt;
 		while((cnt = fread(encbuf, sizeof(char), inputsize, fp)) > 0) {
-			int n = base16384_encode(encbuf, cnt, decbuf);
+			if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
+			int n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 			if(fwrite(decbuf, n, 1, fpo) <= 0) {
-				return base16384_err_write_file;
+				goto_base16384_file_detailed_cleanup(encode, base16384_err_write_file, {});
 			}
 		}
-		if(!is_standard_io(output)) fclose(fpo);
-		if(!is_standard_io(input)) fclose(fp);
 	#if !defined _WIN32 && !defined __cosmopolitan
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
 		if(fd < 0) {
-			return base16384_err_open_input_file;
+			goto_base16384_file_detailed_cleanup(encode, base16384_err_open_input_file, {});
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize+16, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
-			return base16384_err_map_input_file;
+			goto_base16384_file_detailed_cleanup(encode, base16384_err_map_input_file, close(fd));
 		}
-		fputc(0xFE, fpo);
-		fputc(0xFF, fpo);
+		if(!(flag&BASE16384_FLAG_NOHEADER)) {
+			fputc(0xFE, fpo);
+			fputc(0xFF, fpo);
+		}
 		int n = base16384_encode(input_file, (int)inputsize, decbuf);
 		if(fwrite(decbuf, n, 1, fpo) <= 0) {
-			return base16384_err_write_file;
+			goto_base16384_file_detailed_cleanup(encode, base16384_err_write_file, {
+				munmap(input_file, (size_t)inputsize);
+				close(fd);
+			});
 		}
 		munmap(input_file, (size_t)inputsize);
-		if(!is_standard_io(output)) fclose(fpo);
 		close(fd);
 	}
 	#endif
-	return base16384_err_ok;
+base16384_encode_file_detailed_cleanup:
+	if(fpo && !is_standard_io(output)) fclose(fpo);
+	if(fp && !is_standard_io(input)) fclose(fp);
+	if(errnobak) errno = errnobak;
+	return retval;
 }
 
-base16384_err_t base16384_encode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf) {
+base16384_err_t base16384_encode_fp_detailed(FILE* input, FILE* output, char* encbuf, char* decbuf, int flag) {
 	if(!input) {
 		return base16384_err_fopen_input_file;
 	}
 	if(!output) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BASE16384_ENCBUFSZ-7;
+	off_t inputsize = _BASE16384_ENCBUFSZ;
 	size_t cnt = 0;
-	fputc(0xFE, output);
-	fputc(0xFF, output);
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	if(!(flag&BASE16384_FLAG_NOHEADER)) {
+		fputc(0xFE, output);
+		fputc(0xFF, output);
+	}
 	while((cnt = fread(encbuf, sizeof(char), inputsize, input)) > 0) {
-		int n = base16384_encode(encbuf, cnt, decbuf);
+		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
+		int n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 		if(fwrite(decbuf, n, 1, output) <= 0) {
 			return base16384_err_write_file;
 		}
@@ -126,18 +211,20 @@ base16384_err_t base16384_encode_fp(FILE* input, FILE* output, char* encbuf, cha
 	return base16384_err_ok;
 }
 
-base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* decbuf) {
+base16384_err_t base16384_encode_fd_detailed(int input, int output, char* encbuf, char* decbuf, int flag) {
 	if(input < 0) {
 		return base16384_err_fopen_input_file;
 	}
 	if(output < 0) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BASE16384_ENCBUFSZ-7;
+	off_t inputsize = _BASE16384_ENCBUFSZ;
 	size_t cnt = 0;
-	write(output, "\xfe\xff", 2);
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	if(!(flag&BASE16384_FLAG_NOHEADER)) write(output, "\xfe\xff", 2);
 	while((cnt = read(input, encbuf, inputsize)) > 0) {
-		int n = base16384_encode(encbuf, cnt, decbuf);
+		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
+		int n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 		if(write(output, decbuf, n) < n) {
 			return base16384_err_write_file;
 		}
@@ -161,11 +248,17 @@ static inline int is_next_end(FILE* fp) {
 	return 0;
 }
 
-base16384_err_t base16384_decode_file(const char* input, const char* output, char* encbuf, char* decbuf) {
+base16384_err_t base16384_decode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag) {
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
-	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) return base16384_err_invalid_file_name;
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	base16384_err_t retval = base16384_err_ok;
+	int errnobak = 0;
+	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
+		errno = EINVAL;
+		return base16384_err_invalid_file_name;
+	}
 	if(is_standard_io(input)) { // read from stdin
 		inputsize = 0;
 		fp = stdin;
@@ -177,93 +270,130 @@ base16384_err_t base16384_decode_file(const char* input, const char* output, cha
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
-	if(!inputsize || inputsize > BASE16384_DECBUFSZ) { // stdin or big file, use decbuf & fread
-		inputsize = BASE16384_DECBUFSZ/8*8;
+	if(!inputsize || inputsize > _BASE16384_DECBUFSZ) { // stdin or big file, use decbuf & fread
+		inputsize = _BASE16384_DECBUFSZ;
 		#if defined _WIN32 || defined __cosmopolitan
 	}
 		#endif
 		if(!fp) fp = fopen(input, "rb");
 		if(!fp) {
-			return base16384_err_fopen_input_file;
+			goto_base16384_file_detailed_cleanup(decode, base16384_err_fopen_input_file, {});
 		}
 		int cnt = 0;
 		int end = 0;
 		rm_head(fp);
+		if(errno) {
+			goto_base16384_file_detailed_cleanup(decode, base16384_err_read_file, {});
+		}
+		#ifdef DEBUG
+			fprintf(stderr, "inputsize: %lld\n", inputsize);
+		#endif
 		while((cnt = fread(decbuf, sizeof(char), inputsize, fp)) > 0) {
 			if((end = is_next_end(fp))) {
 				decbuf[cnt++] = '=';
 				decbuf[cnt++] = end;
 			}
-			if(fwrite(encbuf, base16384_decode(decbuf, cnt, encbuf), 1, fpo) <= 0) {
-				return base16384_err_write_file;
+			if(errno) goto_base16384_file_detailed_cleanup(decode, base16384_err_read_file, {});
+			cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
+			if(fwrite(encbuf, cnt, 1, fpo) <= 0) {
+				goto_base16384_file_detailed_cleanup(decode, base16384_err_write_file, {});
+			}
+			if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) {
+				if(calc_and_check_sum(&sum, cnt, encbuf)) {
+					errno = EINVAL;
+					goto_base16384_file_detailed_cleanup(decode, base16384_err_invalid_decoding_checksum, {});
+				}
 			}
 		}
-		if(!is_standard_io(output)) fclose(fpo);
-		if(!is_standard_io(input)) fclose(fp);
 	#if !defined _WIN32 && !defined __cosmopolitan
 	} else { // small file, use mmap & fwrite
 		int fd = open(input, O_RDONLY);
 		if(fd < 0) {
-			return base16384_err_open_input_file;
+			goto_base16384_file_detailed_cleanup(decode, base16384_err_open_input_file, {});
 		}
 		char *input_file = mmap(NULL, (size_t)inputsize+16, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
-			return base16384_err_map_input_file;
+			goto_base16384_file_detailed_cleanup(decode, base16384_err_map_input_file, close(fd));
 		}
 		int off = skip_offset(input_file);
 		if(fwrite(encbuf, base16384_decode(input_file+off, inputsize-off, encbuf), 1, fpo) <= 0) {
-			return base16384_err_write_file;
+			goto_base16384_file_detailed_cleanup(decode, base16384_err_write_file, {
+				munmap(input_file, (size_t)inputsize);
+				close(fd);
+			});
 		}
 		munmap(input_file, (size_t)inputsize);
-		if(!is_standard_io(output)) fclose(fpo);
 		close(fd);
 	}
 	#endif
-	return base16384_err_ok;
+base16384_decode_file_detailed_cleanup:
+	if(fpo && !is_standard_io(output)) fclose(fpo);
+	if(fp && !is_standard_io(input)) fclose(fp);
+	if(errnobak) errno = errnobak;
+	return retval;
 }
 
-base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf) {
+base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* encbuf, char* decbuf, int flag) {
 	if(!input) {
+		errno = EINVAL;
 		return base16384_err_fopen_input_file;
 	}
 	if(!output) {
+		errno = EINVAL;
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BASE16384_DECBUFSZ/8*8;
+	off_t inputsize = _BASE16384_DECBUFSZ;
 	int cnt = 0;
 	int end = 0;
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	rm_head(input);
+	if(errno) {
+		return base16384_err_read_file;
+	}
 	while((cnt = fread(decbuf, sizeof(char), inputsize, input)) > 0) {
 		if((end = is_next_end(input))) {
 			decbuf[cnt++] = '=';
 			decbuf[cnt++] = end;
 		}
-		if(fwrite(encbuf, base16384_decode(decbuf, cnt, encbuf), 1, output) <= 0) {
+		cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
+		if(fwrite(encbuf, cnt, 1, output) <= 0) {
 			return base16384_err_write_file;
+		}
+		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) {
+			if (calc_and_check_sum(&sum, cnt, encbuf)) {
+				errno = EINVAL;
+				return base16384_err_invalid_decoding_checksum;
+			}
 		}
 	}
 	return base16384_err_ok;
 }
 
-static inline int is_next_end_fd(int fd) {
-	char ch = 0;
+static inline uint16_t is_next_end_fd(int fd) {
+	uint8_t ch = 0;
 	read(fd, &ch, 1);
+	uint16_t ret = (uint16_t)ch & 0x00ff;
 	if(ch == '=') {
 		read(fd, &ch, 1);
+		ret <<= 8;
+		ret |= (uint16_t)ch & 0x00ff;
 	}
-	return (int)ch;
+	return ret;
 }
 
-base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* decbuf) {
+base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf, char* decbuf, int flag) {
 	if(input < 0) {
+		errno = EINVAL;
 		return base16384_err_fopen_input_file;
 	}
 	if(output < 0) {
+		errno = EINVAL;
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = BASE16384_DECBUFSZ/8*8;
+	off_t inputsize = _BASE16384_DECBUFSZ;
 	int cnt = 0;
 	int end = 0;
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	decbuf[0] = 0;
 	if(read(input, decbuf, 2) < 2) {
 		return base16384_err_read_file;
@@ -272,17 +402,26 @@ base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* d
 	while((end = read(input, decbuf+cnt, inputsize-cnt)) > 0 || cnt > 0) {
 		if(end > 0) {
 			cnt += end;
-			if((end = is_next_end_fd(input))) {
+			uint16_t next = is_next_end_fd(input);
+			if(errno) {
+				return base16384_err_read_file;
+			}
+			if(next&0xff00) {
 				decbuf[cnt++] = '=';
-				decbuf[cnt++] = end;
-				end = 0;
-			} else end = 1;
-		} else end = 0;
-		cnt = base16384_decode(decbuf, cnt, encbuf);
-		if(write(output, encbuf, cnt) < cnt) {
+			}
+			decbuf[cnt++] = (char)(next&0x00ff);
+		}
+		end = base16384_decode_unsafe(decbuf, cnt, encbuf);
+		if(write(output, encbuf, end) < end) {
 			return base16384_err_write_file;
 		}
-		cnt = end;
+		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) {
+			if (calc_and_check_sum(&sum, cnt, encbuf)) {
+				errno = EINVAL;
+				return base16384_err_invalid_decoding_checksum;
+			}
+		}
+		cnt = 0;
 	}
 	return base16384_err_ok;
 }

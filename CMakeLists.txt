@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 if (POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif (POLICY CMP0048)
-project(base16384 VERSION 2.2.5)
+project(base16384 VERSION 2.3.0)
 
 add_executable(base16384_b base16384.c)
 
@@ -13,6 +13,7 @@ if (${isBigEndian})
 endif()
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    add_definitions(-DIS_64BIT_PROCESSOR)
     add_library(base16384 SHARED file.c base1464.c)
     add_library(base16384_s STATIC file.c base1464.c)
 ELSE()
