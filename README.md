@@ -5,7 +5,9 @@
 
 Encode binary file to printable utf16be, and vice versa.
 
-## Description 说明
+## Description
+> 说明
+
 Use 16384 Chinene characters (from \u4E00 to \u8DFF) as the "alphabet", just like what base64 did.
 
 使用16384个汉字(从`\u4E00`到`\u8DFF`)作为字符表，就像base64用64个字符作为字符表一样。
@@ -14,31 +16,38 @@ If length of the data has a remainder after moduled by 7, we will use \u3Dxx to 
 
 使用`\u3Dxx`附加在末尾以表示编码时数据不满7位的个数，其范围在01~06。
 
-## Benefits 优点
+## Benefits
+> 优点
+
 Save more space and since the code 0x0000 is encoded to "一", finding zero space seems to be easier.
 
 相较base64节省更多空间，更容易发现二进制文件的规律。
 
-## Usage 使用说明
+## Usage
+> 用法
 
-### Install from Debian Bookworm or higher 从 Debian Bookworm 或更高版本安装
+### Install from Debian Bookworm or higher
+> 从 Debian Bookworm 或更高版本安装
 ```bash
 sudo apt install base16384
 ```
 
-### Install from Homebrew 从 Homebrew 安装
+### Install from Homebrew
+> 从 Homebrew 安装
 ```bash
 brew install base16384
 ```
 
-### Install from my PPA in Ubuntu 乌班图下从我的 PPA 安装
+### Install from my PPA in Ubuntu
+> 乌班图下从我的 PPA 安装
 ```bash
 sudo add-apt-repository ppa:fumiama/ppa
 sudo apt-get update
 sudo apt-get install base16384
 ```
 
-### Build from source code 编译
+### Build from source code
+> 编译
 
 Clone this repo first.
 
@@ -67,30 +76,36 @@ Now you can encode/decode a file by commands below.
 
 ```kotlin
 Usage:
-base16384 [-edt] [inputfile] [outputfile]
-  -e		encode
-  -d		decode
-  -t		show spend time
-  inputfile	pass - to read from stdin
-  outputfile	pass - to write to stdout
+base16384 [-edtn] [inputfile] [outputfile]
+  -e            encode (default)
+  -d            decode
+  -t            show spend time
+  -n            don't write utf16be file header (0xFEFF)
+  -c            embed or validate checksum in remainder
+  inputfile     pass - to read from stdin
+  outputfile    pass - to write to stdout
 ```
 
-## Examples 用例
-1. Encode simple text 简单文本编码
+## Examples
+> 用例
+1. Encode simple text
+> 简单文本编码
 
 ```bash
 echo -n "1234567" | base16384 -e - - | iconv -f utf-16be -t utf-8
 婌焳廔萷
 ```
 
-3. Decode simple text 简单文本解码
+3. Decode simple text
+> 简单文本解码
 
 ```bash
 echo -n "婌焳廔萷" | iconv -f utf-8 -t utf-16be | base16384 -d - -
 1234567
 ```
 
-3. Encode file 编码文件
+3. Encode file
+> 编码文件
 
 The text below is the encoding of the base16384 itself on MacOS 12.6 arm64. It is clear to see the strucutre of the binary file.
 
