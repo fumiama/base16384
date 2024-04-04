@@ -98,6 +98,7 @@ int main() {
     fputs("testing base16384_en/decode_file...\n", stderr);
     init_input_file();
     for(i = TEST_SIZE; i > 0; i--) {
+        fprintf(stderr, "loop@%d\n", i);
         reset_and_truncate(fd, i);
         loop_ok(close(fd), i, "close");
         fputs("base16384_encode_file\n", stderr);
