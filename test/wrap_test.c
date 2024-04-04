@@ -56,18 +56,18 @@ char tstbuf[BASE16384_ENCBUFSZ];
     uint64_t buf, sum_input = 0, sum_validate = 0; \
     fp = fopen(TEST_INPUT_FILENAME, "rb"); { \
         loop_ok(!fp, i, "fopen"); \
-        while (fread(&buf, sizeof(sum_input), 1, fp) == 1) sum_input += buf; \
+        while (fread(&buf, sizeof(sum_input), 1, fp) > 0) sum_input += buf; \
         buf = 0; \
-        while (fread(&buf, 1, 1, fp) == 1) { \
+        while (fread(&buf, 1, 1, fp) > 0) { \
             sum_input += buf; \
             sum_input = LEFTROTATE(sum_input, 4); \
         } \
     } fclose(fp); \
     fp = fopen(TEST_VALIDATE_FILENAME, "rb"); { \
         loop_ok(!fp, i, "fopen"); \
-        while (fread(&buf, sizeof(sum_validate), 1, fp) == 1) sum_validate += buf; \
+        while (fread(&buf, sizeof(sum_validate), 1, fp) > 0) sum_validate += buf; \
         buf = 0; \
-        while (fread(&buf, 1, 1, fp) == 1) { \
+        while (fread(&buf, 1, 1, fp) > 0) { \
             sum_validate += buf; \
             sum_validate = LEFTROTATE(sum_validate, 4); \
         } \
@@ -109,6 +109,7 @@ int main() {
 
         validate_result();
     }
+    fputs("one test passed.\n", stderr);
 
     fputs("testing base16384_en/decode_fp...\n", stderr);
     init_input_file();
@@ -140,6 +141,7 @@ int main() {
 
         validate_result();
     }
+    fputs("one test passed.\n", stderr);
 
     fputs("testing base16384_en/decode_fd...\n", stderr);
     init_input_file();
@@ -166,6 +168,7 @@ int main() {
 
         validate_result();
     }
+    fputs("one test passed.\n", stderr);
 
     remove(TEST_INPUT_FILENAME);
     remove(TEST_OUTPUT_FILENAME);

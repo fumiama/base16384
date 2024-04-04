@@ -17,9 +17,9 @@
 #include "binary.h"
 
 #define TEST_SIZE (4096)
-#define TEST_INPUT_FILENAME "wrap_test_input.bin"
-#define TEST_OUTPUT_FILENAME "wrap_test_output.bin"
-#define TEST_VALIDATE_FILENAME "wrap_test_validate.bin"
+#define TEST_INPUT_FILENAME "file_test_input.bin"
+#define TEST_OUTPUT_FILENAME "file_test_output.bin"
+#define TEST_VALIDATE_FILENAME "file_test_validate.bin"
 
 char encbuf[BASE16384_ENCBUFSZ];
 char decbuf[BASE16384_DECBUFSZ];
@@ -56,18 +56,18 @@ char tstbuf[BASE16384_ENCBUFSZ];
     uint64_t buf, sum_input = 0, sum_validate = 0; \
     fp = fopen(TEST_INPUT_FILENAME, "rb"); { \
         loop_ok(!fp, i, "fopen"); \
-        while (fread(&buf, sizeof(sum_input), 1, fp) == 1) sum_input += buf; \
+        while (fread(&buf, sizeof(sum_input), 1, fp) > 0) sum_input += buf; \
         buf = 0; \
-        while (fread(&buf, 1, 1, fp) == 1) { \
+        while (fread(&buf, 1, 1, fp) > 0) { \
             sum_input += buf; \
             sum_input = LEFTROTATE(sum_input, 4); \
         } \
     } fclose(fp); \
     fp = fopen(TEST_VALIDATE_FILENAME, "rb"); { \
         loop_ok(!fp, i, "fopen"); \
-        while (fread(&buf, sizeof(sum_validate), 1, fp) == 1) sum_validate += buf; \
+        while (fread(&buf, sizeof(sum_validate), 1, fp) > 0) sum_validate += buf; \
         buf = 0; \
-        while (fread(&buf, 1, 1, fp) == 1) { \
+        while (fread(&buf, 1, 1, fp) > 0) { \
             sum_validate += buf; \
             sum_validate = LEFTROTATE(sum_validate, 4); \
         } \
@@ -165,9 +165,13 @@ char tstbuf[BASE16384_ENCBUFSZ];
 
 #define test_detailed(name) \
     test_##name##_detailed(0); \
+    fputs("one test passed.\n", stderr); \
     test_##name##_detailed(BASE16384_FLAG_NOHEADER); \
+    fputs("one test passed.\n", stderr); \
     test_##name##_detailed(BASE16384_FLAG_SUM_CHECK_ON_REMAIN); \
-    test_##name##_detailed(BASE16384_FLAG_NOHEADER|BASE16384_FLAG_SUM_CHECK_ON_REMAIN);
+    fputs("one test passed.\n", stderr); \
+    test_##name##_detailed(BASE16384_FLAG_NOHEADER|BASE16384_FLAG_SUM_CHECK_ON_REMAIN); \
+    fputs("one test passed.\n", stderr);
 
 int main() {
     srand(time(NULL));

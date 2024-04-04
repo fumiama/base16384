@@ -43,7 +43,7 @@ enum base16384_err_t {
 typedef enum base16384_err_t base16384_err_t;
 
 #ifndef BASE16384_BUFSZ_FACTOR
-	#define BASE16384_BUFSZ_FACTOR (1024)
+	#define BASE16384_BUFSZ_FACTOR (8)
 #endif
 
 #define _BASE16384_ENCBUFSZ ((BUFSIZ*BASE16384_BUFSZ_FACTOR)/7*7)

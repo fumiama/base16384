@@ -87,4 +87,57 @@
 // leftrotate function definition
 #define LEFTROTATE(x, c) (((x) << (c)) | ((x) >> (sizeof(x)*8 - (c))))
 
+static inline uint32_t calc_sum(uint32_t sum, size_t cnt, char* encbuf) {
+	uint32_t i;
+	#ifdef DEBUG
+		fprintf(stderr, "cnt: %zu, roundin: %08x, ", cnt, sum);
+	#endif
+	for(i = 0; i < cnt/sizeof(sum); i++) {
+		#ifdef DEBUG
+			if (!i) {
+				fprintf(stderr, "firstval: %08x, ", htobe32(((uint32_t*)encbuf)[i]));
+			}
+		#endif
+		sum += ~LEFTROTATE(htobe32(((uint32_t*)encbuf)[i]), encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "roundmid: %08x", sum);
+	#endif
+	size_t rem = cnt % sizeof(sum);
+	if(rem) {
+		uint32_t x = htobe32(((uint32_t*)encbuf)[i]) & (0xffffffff << (8*(sizeof(sum)-rem)));
+		sum += ~LEFTROTATE(x, encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
+		#ifdef DEBUG
+			fprintf(stderr, ", roundrem:%08x\n", sum);
+		#endif
+	}
+	#ifdef DEBUG
+		else fprintf(stderr, "\n");
+	#endif
+	return sum;
+}
+
+static inline uint32_t calc_and_embed_sum(uint32_t sum, size_t cnt, char* encbuf) {
+	sum = calc_sum(sum, cnt, encbuf);
+	if(cnt%7) { // last encode
+		*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
+	}
+	return sum;
+}
+
+static inline int calc_and_check_sum(uint32_t* s, size_t cnt, char* encbuf) {
+	uint32_t sum = calc_sum(*s, cnt, encbuf);
+	if(cnt%7) { // is last decode block
+		int shift = (int[]){0, 26, 20, 28, 22, 30, 24}[cnt%7];
+		uint32_t sum_read = be32toh((*(uint32_t*)(&encbuf[cnt]))) >> shift;
+		sum >>= shift;
+		#ifdef DEBUG
+			fprintf(stderr, "cntrm: %lu, mysum: %08x, sumrd: %08x\n", cnt%7, sum, sum_read);
+		#endif
+		return sum != sum_read;
+	}
+	*s = sum;
+	return 0;
+}
+
 #endif

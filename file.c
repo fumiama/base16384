@@ -47,59 +47,6 @@ static inline off_t get_file_size(const char* filepath) {
 
 #define is_standard_io(filename) (*(uint16_t*)(filename) == *(uint16_t*)"-")
 
-static inline uint32_t calc_sum(uint32_t sum, size_t cnt, char* encbuf) {
-	uint32_t i;
-	#ifdef DEBUG
-		fprintf(stderr, "cnt: %zu, roundin: %08x, ", cnt, sum);
-	#endif
-	for(i = 0; i < cnt/sizeof(sum); i++) {
-		#ifdef DEBUG
-			if (!i) {
-				fprintf(stderr, "firstval: %08x, ", htobe32(((uint32_t*)encbuf)[i]));
-			}
-		#endif
-		sum += ~LEFTROTATE(htobe32(((uint32_t*)encbuf)[i]), encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
-	}
-	#ifdef DEBUG
-		fprintf(stderr, "roundmid: %08x", sum);
-	#endif
-	size_t rem = cnt % sizeof(sum);
-	if(rem) {
-		uint32_t x = htobe32(((uint32_t*)encbuf)[i]) & (0xffffffff << (8*(sizeof(sum)-rem)));
-		sum += ~LEFTROTATE(x, encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
-		#ifdef DEBUG
-			fprintf(stderr, ", roundrem:%08x\n", sum);
-		#endif
-	}
-	#ifdef DEBUG
-		else fprintf(stderr, "\n");
-	#endif
-	return sum;
-}
-
-static inline uint32_t calc_and_embed_sum(uint32_t sum, size_t cnt, char* encbuf) {
-	sum = calc_sum(sum, cnt, encbuf);
-	if(cnt%7) { // last encode
-		*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
-	}
-	return sum;
-}
-
-static inline int calc_and_check_sum(uint32_t* s, size_t cnt, char* encbuf) {
-	uint32_t sum = calc_sum(*s, cnt, encbuf);
-	if(cnt%7) { // is last decode block
-		int shift = (int[]){0, 26, 20, 28, 22, 30, 24}[cnt%7];
-		uint32_t sum_read = be32toh((*(uint32_t*)(&encbuf[cnt]))) >> shift;
-		sum >>= shift;
-		#ifdef DEBUG
-			fprintf(stderr, "cntrm: %lu, mysum: %08x, sumrd: %08x\n", cnt%7, sum, sum_read);
-		#endif
-		return sum != sum_read;
-	}
-	*s = sum;
-	return 0;
-}
-
 #define goto_base16384_file_detailed_cleanup(method, reason, dobeforereturn) { \
 	errnobak = errno; \
 	retval = reason; \
@@ -112,13 +59,13 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 	FILE* fp = NULL;
 	FILE* fpo;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
-	int errnobak = 0;
+	int errnobak = 0, is_stdin = is_standard_io(input);
 	base16384_err_t retval = base16384_err_ok;
 	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
 		errno = EINVAL;
 		return base16384_err_invalid_file_name;
 	}
-	if(is_standard_io(input)) { // read from stdin
+	if(is_stdin) { // read from stdin
 		inputsize = _BASE16384_ENCBUFSZ;
 		fp = stdin;
 	} else inputsize = get_file_size(input);
@@ -150,8 +97,14 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 		#endif
 		size_t cnt;
 		while((cnt = fread(encbuf, sizeof(char), inputsize, fp)) > 0) {
+			int n;
+			while(cnt%7) {
+				n = fread(encbuf+cnt, sizeof(char), 1, fp);
+				if(n > 0) cnt++;
+				else break;
+			}
 			if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
-			int n = base16384_encode_unsafe(encbuf, cnt, decbuf);
+			n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 			if(n && fwrite(decbuf, n, 1, fpo) <= 0) {
 				goto_base16384_file_detailed_cleanup(encode, base16384_err_write_file, {});
 			}
@@ -183,7 +136,7 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 	#endif
 base16384_encode_file_detailed_cleanup:
 	if(fpo && !is_standard_io(output)) fclose(fpo);
-	if(fp && !is_standard_io(input)) fclose(fp);
+	if(fp && !is_stdin) fclose(fp);
 	if(errnobak) errno = errnobak;
 	return retval;
 }
@@ -195,16 +148,22 @@ base16384_err_t base16384_encode_fp_detailed(FILE* input, FILE* output, char* en
 	if(!output) {
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = _BASE16384_ENCBUFSZ;
-	size_t cnt = 0;
-	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	if(!(flag&BASE16384_FLAG_NOHEADER)) {
 		fputc(0xFE, output);
 		fputc(0xFF, output);
 	}
+	off_t inputsize = _BASE16384_ENCBUFSZ;
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	size_t cnt;
 	while((cnt = fread(encbuf, sizeof(char), inputsize, input)) > 0) {
+		int n;
+		while(cnt%7) {
+			n = fread(encbuf+cnt, sizeof(char), 1, input);
+			if(n > 0) cnt++;
+			else break;
+		}
 		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
-		int n = base16384_encode_unsafe(encbuf, cnt, decbuf);
+		n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 		if(n && fwrite(decbuf, n, 1, output) <= 0) {
 			return base16384_err_write_file;
 		}
@@ -224,8 +183,14 @@ base16384_err_t base16384_encode_fd_detailed(int input, int output, char* encbuf
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	if(!(flag&BASE16384_FLAG_NOHEADER)) write(output, "\xfe\xff", 2);
 	while((cnt = read(input, encbuf, inputsize)) > 0) {
+		int n;
+		while(cnt%7) {
+			n = read(input, encbuf+cnt, sizeof(char));
+			if(n > 0) cnt++;
+			else break;
+		}
 		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
-		int n = base16384_encode_unsafe(encbuf, cnt, decbuf);
+		n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 		if(n && write(output, decbuf, n) < n) {
 			return base16384_err_write_file;
 		}
@@ -255,12 +220,12 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 	FILE* fpo;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	base16384_err_t retval = base16384_err_ok;
-	int errnobak = 0;
+	int errnobak = 0, is_stdin = is_standard_io(input);
 	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
 		errno = EINVAL;
 		return base16384_err_invalid_file_name;
 	}
-	if(is_standard_io(input)) { // read from stdin
+	if(is_stdin) { // read from stdin
 		inputsize = _BASE16384_DECBUFSZ;
 		fp = stdin;
 	} else inputsize = get_file_size(input);
@@ -272,7 +237,9 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
+	int loop_count = 0;
 	if(inputsize >= _BASE16384_DECBUFSZ) { // stdin or big file, use decbuf & fread
+		if(!is_stdin) loop_count = inputsize/_BASE16384_DECBUFSZ;
 		inputsize = _BASE16384_DECBUFSZ;
 		#if defined _WIN32 || defined __cosmopolitan
 	}
@@ -281,8 +248,6 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 		if(!fp) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_fopen_input_file, {});
 		}
-		int cnt = 0;
-		int end = 0;
 		rm_head(fp);
 		if(errno) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_read_file, {});
@@ -290,7 +255,15 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 		#ifdef DEBUG
 			fprintf(stderr, "inputsize: %lld\n", inputsize);
 		#endif
+		int cnt;
 		while((cnt = fread(decbuf, sizeof(char), inputsize, fp)) > 0) {
+			int n;
+			while(cnt%8) {
+				n = fread(decbuf+cnt, sizeof(char), 1, fp);
+				if(n > 0) cnt++;
+				else break;
+			}
+			int end;
 			if((end = is_next_end(fp))) {
 				decbuf[cnt++] = '=';
 				decbuf[cnt++] = end;
@@ -331,7 +304,7 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 	#endif
 base16384_decode_file_detailed_cleanup:
 	if(fpo && !is_standard_io(output)) fclose(fpo);
-	if(fp && !is_standard_io(input)) fclose(fp);
+	if(fp && !is_stdin) fclose(fp);
 	if(errnobak) errno = errnobak;
 	return retval;
 }
@@ -346,18 +319,25 @@ base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* en
 		return base16384_err_fopen_output_file;
 	}
 	off_t inputsize = _BASE16384_DECBUFSZ;
-	int cnt = 0;
-	int end = 0;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	rm_head(input);
 	if(errno) {
 		return base16384_err_read_file;
 	}
+	int cnt;
 	while((cnt = fread(decbuf, sizeof(char), inputsize, input)) > 0) {
+		int n;
+		while(cnt%8) {
+			n = fread(decbuf+cnt, sizeof(char), 1, input);
+			if(n > 0) cnt++;
+			else break;
+		}
+		int end;
 		if((end = is_next_end(input))) {
 			decbuf[cnt++] = '=';
 			decbuf[cnt++] = end;
 		}
+		if(errno) return base16384_err_read_file;
 		cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
 		if(cnt && fwrite(encbuf, cnt, 1, output) <= 0) {
 			return base16384_err_write_file;
@@ -407,6 +387,12 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 			memcpy(decbuf, remains, p);
 			n += p;
 			p = 0;
+		}
+		int x;
+		while(n%8) {
+			x = read(input, decbuf+n, sizeof(char));
+			if(x > 0) n++;
+			else break;
 		}
 		uint16_t next = is_next_end_fd(input);
 		if(errno) {
