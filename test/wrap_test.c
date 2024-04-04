@@ -29,7 +29,8 @@ char tstbuf[BASE16384_ENCBUFSZ];
     if (has_failed) { \
         perror(reason); \
         return 1; \
-    }
+    } \
+    fputs(reason " run successfully\n", stderr);
 
 #define loop_ok(has_failed, i, reason) \
     if (has_failed) { \
@@ -85,7 +86,8 @@ char tstbuf[BASE16384_ENCBUFSZ];
     fp = fopen(TEST_INPUT_FILENAME, "wb"); \
     ok(!fp, "fopen"); \
     ok(fwrite(encbuf, TEST_SIZE, 1, fp) != 1, "fwrite"); \
-    ok(fclose(fp), "fclose");
+    ok(fclose(fp), "fclose"); \
+    fputs("input file created.", stderr);
 
 int main() {
     srand(time(NULL));
