@@ -17,7 +17,7 @@ endif ()
 
 add_executable(base16384_b base16384.c)
 
-IF (CMAKE_SIZEOF_VOID_P EQUAL 8)
+IF ((NOT FORCE_32BIT) AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(STATUS "Adding 64bit libraries...")
     add_definitions(-DIS_64BIT_PROCESSOR)
     add_library(base16384 SHARED file.c base1464.c)

@@ -117,6 +117,15 @@ static inline int base16384_decode_len(int dlen, int offset) {
 }
 
 /**
+ * @brief safely encode data and write result into buf
+ * @param data data to encode, no data overread
+ * @param dlen the data length
+ * @param buf the output buffer, whose size can be exactly `_base16384_encode_len`
+ * @return the total length written
+*/
+int base16384_encode_safe(const char* data, int dlen, char* buf);
+
+/**
  * @brief encode data and write result into buf
  * @param data data to encode
  * @param dlen the data length
@@ -133,6 +142,15 @@ int base16384_encode(const char* data, int dlen, char* buf);
  * @return the total length written
 */
 int base16384_encode_unsafe(const char* data, int dlen, char* buf);
+
+/**
+ * @brief safely decode data and write result into buf
+ * @param data data to decode, no data overread
+ * @param dlen the data length
+ * @param buf the output buffer, whose size can be exactly `_base16384_decode_len`
+ * @return the total length written
+*/
+int base16384_decode_safe(const char* data, int dlen, char* buf);
 
 /**
  * @brief decode data and write result into buf

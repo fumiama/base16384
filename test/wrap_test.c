@@ -98,18 +98,16 @@ int main() {
     fputs("testing base16384_en/decode_file...\n", stderr);
     init_input_file();
     for(i = TEST_SIZE; i > 0; i--) {
-        fprintf(stderr, "loop@%d\n", i);
         reset_and_truncate(fd, i);
         loop_ok(close(fd), i, "close");
-        fputs("base16384_encode_file\n", stderr);
+
         err = base16384_encode_file(TEST_INPUT_FILENAME, TEST_OUTPUT_FILENAME, encbuf, decbuf);
         base16384_loop_ok(err);
-        fputs("base16384_decode_file\n", stderr);
+
         err = base16384_decode_file(TEST_OUTPUT_FILENAME, TEST_VALIDATE_FILENAME, encbuf, decbuf);
         base16384_loop_ok(err);
-        fputs("validate_result\n", stderr);
+
         validate_result();
-        fputs("fin\n\n", stderr);
     }
 
     fputs("testing base16384_en/decode_fp...\n", stderr);
