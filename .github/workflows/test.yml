@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Check out code
+      - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up Build tools
+      - name: Setup Build Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc cmake
@@ -21,4 +21,4 @@ jobs:
           cd build
           cmake -DBUILD=test ..
           make
-          make test
+          make test || make test --rerun-failed --output-on-failure

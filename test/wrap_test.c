@@ -73,7 +73,7 @@ char tstbuf[BASE16384_ENCBUFSZ];
         } \
     } fclose(fp); \
     if (sum_input != sum_validate) { \
-        fprintf(stderr, "loop @%d, expect: %016llx, got: %016llx: ", i, sum_input, sum_validate); \
+        fprintf(stderr, "loop @%d, expect: %016llx, got: %016llx: ", i, (unsigned long long)sum_input, (unsigned long long)sum_validate); \
         fputs(TEST_INPUT_FILENAME " and " TEST_VALIDATE_FILENAME " mismatch.", stderr); \
         return 1; \
     }

@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Check out code
+      - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up Build tools
+      - name: Setup Build Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc
@@ -32,7 +32,7 @@ jobs:
             -include cosmopolitan.h crt.o ape.o cosmopolitan.a
           objcopy -S -O binary base16384.com.dbg base16384.com
 
-      - name: Upload binaries to release
+      - name: Upload Binaries to Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
