@@ -162,7 +162,7 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 		if(fd < 0) {
 			goto_base16384_file_detailed_cleanup(encode, base16384_err_open_input_file, {});
 		}
-		char *input_file = mmap(NULL, (size_t)inputsize+16, PROT_READ, MAP_PRIVATE, fd, 0);
+		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
 			goto_base16384_file_detailed_cleanup(encode, base16384_err_map_input_file, close(fd));
 		}
@@ -173,11 +173,11 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 		int n = base16384_encode_safe(input_file, (int)inputsize, decbuf);
 		if(n && fwrite(decbuf, n, 1, fpo) <= 0) {
 			goto_base16384_file_detailed_cleanup(encode, base16384_err_write_file, {
-				munmap(input_file, (size_t)inputsize+16);
+				munmap(input_file, (size_t)inputsize);
 				close(fd);
 			});
 		}
-		munmap(input_file, (size_t)inputsize+16);
+		munmap(input_file, (size_t)inputsize);
 		close(fd);
 	}
 	#endif
@@ -313,7 +313,7 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 		if(fd < 0) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_open_input_file, {});
 		}
-		char *input_file = mmap(NULL, (size_t)inputsize+16, PROT_READ, MAP_PRIVATE, fd, 0);
+		char *input_file = mmap(NULL, (size_t)inputsize, PROT_READ, MAP_PRIVATE, fd, 0);
 		if(input_file == MAP_FAILED) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_map_input_file, close(fd));
 		}
@@ -321,11 +321,11 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 		n = base16384_decode_safe(input_file+n, inputsize-n, encbuf);
 		if(n && fwrite(encbuf, n, 1, fpo) <= 0) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_write_file, {
-				munmap(input_file, (size_t)inputsize+16);
+				munmap(input_file, (size_t)inputsize);
 				close(fd);
 			});
 		}
-		munmap(input_file, (size_t)inputsize+16);
+		munmap(input_file, (size_t)inputsize);
 		close(fd);
 	}
 	#endif
