@@ -24,28 +24,23 @@
 #include <stdio.h>
 #endif
 
-#define define_base16384_err_t(n) base16384_err_##n
-
-    enum base16384_err_t {
-        define_base16384_err_t(ok),
-        define_base16384_err_t(get_file_size),
-        define_base16384_err_t(fopen_output_file),
-        define_base16384_err_t(fopen_input_file),
-        define_base16384_err_t(write_file),
-        define_base16384_err_t(open_input_file),
-        define_base16384_err_t(map_input_file),
-        define_base16384_err_t(read_file),
-        define_base16384_err_t(invalid_file_name),
-        define_base16384_err_t(invalid_commandline_parameter),
-        define_base16384_err_t(invalid_decoding_checksum),
-    };
-
-    /**
-     * @brief return value of base16384_en/decode_file
-    */
-    typedef enum base16384_err_t base16384_err_t;
-
-#undef define_base16384_err_t
+enum base16384_err_t {
+	base16384_err_ok,
+	base16384_err_get_file_size,
+	base16384_err_fopen_output_file,
+	base16384_err_fopen_input_file,
+	base16384_err_write_file,
+	base16384_err_open_input_file,
+	base16384_err_map_input_file,
+	base16384_err_read_file,
+	base16384_err_invalid_file_name,
+	base16384_err_invalid_commandline_parameter,
+	base16384_err_invalid_decoding_checksum,
+};
+/**
+ * @brief return value of base16384_en/decode_file
+*/
+typedef enum base16384_err_t base16384_err_t;
 
 #define _BASE16384_ENCBUFSZ (BUFSIZ*1024/7*7)
 #define _BASE16384_DECBUFSZ (BUFSIZ*1024/8*8)
@@ -157,68 +152,91 @@ int base16384_decode(const char* data, int dlen, char* buf);
 */
 int base16384_decode_unsafe(const char* data, int dlen, char* buf);
 
-// base16384_encode_file_detailed encodes input file to output file.
-//    use `-` to specify stdin/stdout
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-base16384_err_t base16384_encode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag);
+#define base16384_typed_params(type) type input, type output, char* encbuf, char* decbuf
+#define base16384_typed_flag_params(type) base16384_typed_params(type), int flag
 
-// base16384_encode_fp_detailed encodes input file to output file.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-base16384_err_t base16384_encode_fp_detailed(FILE* input, FILE* output, char* encbuf, char* decbuf, int flag);
+/**
+ * @brief encode input file to output file
+ * @param input filename or `-` to specify stdin
+ * @param output filename or `-` to specify stdout
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_encode_file_detailed(base16384_typed_flag_params(const char*));
 
-// base16384_encode_fd_detailed encodes input fd to output fd.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-base16384_err_t base16384_encode_fd_detailed(int input, int output, char* encbuf, char* decbuf, int flag);
+/**
+ * @brief encode input `FILE*` to output `FILE*`
+ * @param input `FILE*` pointer
+ * @param output `FILE*` pointer
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_encode_fp_detailed(base16384_typed_flag_params(FILE*));
 
-// base16384_decode_file_detailed decodes input file to output file.
-//    use `-` to specify stdin/stdout
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-base16384_err_t base16384_decode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag);
+/**
+ * @brief encode input stream to output stream
+ * @param input file descripter
+ * @param output file descripter
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_encode_fd_detailed(base16384_typed_flag_params(int));
 
-// base16384_decode_fp_detailed decodes input file to output file.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* encbuf, char* decbuf, int flag);
+/**
+ * @brief decode input file to output file
+ * @param input filename or `-` to specify stdin
+ * @param output filename or `-` to specify stdout
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_decode_file_detailed(base16384_typed_flag_params(const char*));
 
-// base16384_decode_fd_detailed decodes input fd to output fd.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf, char* decbuf, int flag);
+/**
+ * @brief decode input `FILE*` to output `FILE*`
+ * @param input `FILE*` pointer
+ * @param output `FILE*` pointer
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_decode_fp_detailed(base16384_typed_flag_params(FILE*));
 
-// base16384_encode_file encodes input file to output file.
-//    use `-` to specify stdin/stdout
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-static inline base16384_err_t base16384_encode_file(const char* input, const char* output, char* encbuf, char* decbuf) {
-	return base16384_encode_file_detailed(input, output, encbuf, decbuf, 0);
-}
+/**
+ * @brief decode input stream to output stream
+ * @param input file descripter
+ * @param output file descripter
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_decode_fd_detailed(base16384_typed_flag_params(int));
 
-// base16384_encode_fp encodes input file to output file.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-static inline base16384_err_t base16384_encode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf) {
-	return base16384_encode_fp_detailed(input, output, encbuf, decbuf, 0);
-}
+#define BASE16384_DEFINE_DEATILED_WRAP(method, name, type) \
+	static inline base16384_err_t base16384_##method##_##name##(base16384_typed_params(type)) { \
+		return base16384_##method##_##name##_detailed(input, output, encbuf, decbuf, 0); \
+	}
 
-// base16384_encode_fd encodes input fd to output fd.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-static inline base16384_err_t base16384_encode_fd(int input, int output, char* encbuf, char* decbuf) {
-	return base16384_encode_fd_detailed(input, output, encbuf, decbuf, 0);
-}
+	BASE16384_DEFINE_DEATILED_WRAP(encode, file, const char*);
+	BASE16384_DEFINE_DEATILED_WRAP(encode, fp, FILE*);
+	BASE16384_DEFINE_DEATILED_WRAP(encode, fd, int);
 
-// base16384_decode_file decodes input file to output file.
-//    use `-` to specify stdin/stdout
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-static inline base16384_err_t base16384_decode_file(const char* input, const char* output, char* encbuf, char* decbuf) {
-	return base16384_decode_file_detailed(input, output, encbuf, decbuf, 0);
-}
+	BASE16384_DEFINE_DEATILED_WRAP(decode, file, const char*);
+	BASE16384_DEFINE_DEATILED_WRAP(decode, fp, FILE*);
+	BASE16384_DEFINE_DEATILED_WRAP(decode, fd, int);
 
-// base16384_decode_fp decodes input file to output file.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-static inline base16384_err_t base16384_decode_fp(FILE* input, FILE* output, char* encbuf, char* decbuf) {
-	return base16384_decode_fp_detailed(input, output, encbuf, decbuf, 0);
-}
+#undef BASE16384_DEFINE_DEATILED_WRAP
 
-// base16384_decode_fd decodes input fd to output fd.
-//    encbuf & decbuf must be no less than BASE16384_ENCBUFSZ & BASE16384_DECBUFSZ
-static inline base16384_err_t base16384_decode_fd(int input, int output, char* encbuf, char* decbuf) {
-	return base16384_decode_fd_detailed(input, output, encbuf, decbuf, 0);
-}
+#undef base16384_typed_flag_params
+#undef base16384_typed_params
 
 #endif

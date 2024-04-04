@@ -58,7 +58,7 @@ static inline uint32_t calc_sum(uint32_t sum, size_t cnt, char* encbuf) {
 				fprintf(stderr, "firstval: %08x, ", htobe32(((uint32_t*)encbuf)[i]));
 			}
 		#endif
-		sum += LEFTROTATE(htobe32(((uint32_t*)encbuf)[i]), encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
+		sum += ~LEFTROTATE(htobe32(((uint32_t*)encbuf)[i]), encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
 	}
 	#ifdef DEBUG
 		fprintf(stderr, "roundmid: %08x", sum);
@@ -66,7 +66,7 @@ static inline uint32_t calc_sum(uint32_t sum, size_t cnt, char* encbuf) {
 	size_t rem = cnt % sizeof(sum);
 	if(rem) {
 		uint32_t x = htobe32(((uint32_t*)encbuf)[i]) & (0xffffffff << (8*(sizeof(sum)-rem)));
-		sum += LEFTROTATE(x, encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
+		sum += ~LEFTROTATE(x, encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
 		#ifdef DEBUG
 			fprintf(stderr, ", roundrem:%08x\n", sum);
 		#endif

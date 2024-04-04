@@ -39,7 +39,13 @@ unsigned long get_start_ms() {
 #endif
 
 static base16384_err_t print_usage() {
-	fputs("Copyright (c) 2022-2024 Fumiama Minamoto.\nBase16384 2.3.0 (April 4th 2024). Usage:\n", stderr);
+	#ifndef BASE16384_VERSION
+		#define BASE16384_VERSION "dev"
+	#endif
+	#ifndef BASE16384_VERSION_DATE
+		#define BASE16384_VERSION_DATE "unknown date"
+	#endif
+	fputs("Copyright (c) 2022-2024 Fumiama Minamoto.\nBase16384 "BASE16384_VERSION" ("BASE16384_VERSION_DATE"). Usage:\n", stderr);
 	fputs("base16384 [-edtn] [inputfile] [outputfile]\n", stderr);
 	fputs("  -e\t\tencode (default)\n", stderr);
 	fputs("  -d\t\tdecode\n", stderr);
@@ -102,12 +108,13 @@ int main(int argc, char** argv) {
 	}
 
 	base16384_err_t exitstat = base16384_err_ok;
+
 	#define do_coding(method) base16384_##method##_file_detailed( \
 		argv[2], argv[3], encbuf, decbuf, \
 		(no_header?BASE16384_FLAG_NOHEADER:0) | (use_checksum?BASE16384_FLAG_SUM_CHECK_ON_REMAIN:0) \
 	)
-	exitstat = is_encode?do_coding(encode):do_coding(decode);
-
+		exitstat = is_encode?do_coding(encode):do_coding(decode);
+	#undef do_coding
 	if(t) {
 		#ifdef _WIN32
 			fprintf(stderr, "spend time: %lums\n", clock() - t);
@@ -116,20 +123,22 @@ int main(int argc, char** argv) {
 		#endif
 	}
 
-	#define print_base16384_err(n) case base16384_err_##n: perror("base16384_err_"#n)
-	if(exitstat) switch(exitstat) {
-		print_base16384_err(get_file_size); break;
-		print_base16384_err(fopen_output_file); break;
-		print_base16384_err(fopen_input_file); break;
-		print_base16384_err(write_file); break;
-		print_base16384_err(open_input_file); break;
-		print_base16384_err(map_input_file); break;
-		print_base16384_err(read_file); break;
-		print_base16384_err(invalid_file_name); break;
-		print_base16384_err(invalid_commandline_parameter); break;
-		print_base16384_err(invalid_decoding_checksum); break;
-		default: perror("base16384"); break;
-	}
+	#define base16384_perror_case(n) case base16384_err_##n: perror("base16384_err_"#n)
+		if(exitstat) switch(exitstat) {
+			base16384_perror_case(get_file_size); break;
+			base16384_perror_case(fopen_output_file); break;
+			base16384_perror_case(fopen_input_file); break;
+			base16384_perror_case(write_file); break;
+			base16384_perror_case(open_input_file); break;
+			base16384_perror_case(map_input_file); break;
+			base16384_perror_case(read_file); break;
+			base16384_perror_case(invalid_file_name); break;
+			base16384_perror_case(invalid_commandline_parameter); break;
+			base16384_perror_case(invalid_decoding_checksum); break;
+			default: perror("base16384"); break;
+		}
+	#undef base16384_perror_case
+
     return exitstat;
 
 }

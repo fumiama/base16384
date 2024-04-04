@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 2.8.12)
+if (POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif (POLICY CMP0048)
+project(base16384_test VERSION 1.0.0)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+file (GLOB_RECURSE C_FILES "*.c")
+foreach (C_FILE ${C_FILES})
+    get_filename_component(FILE_NAME ${C_FILE} NAME_WE)
+    add_executable(${FILE_NAME} ${C_FILE})
+    target_link_libraries(${FILE_NAME} base16384_s)
+    add_test(NAME do_${FILE_NAME} COMMAND ${FILE_NAME})
+endforeach ()
