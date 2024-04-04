@@ -173,11 +173,11 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 		int n = base16384_encode(input_file, (int)inputsize, decbuf);
 		if(n && fwrite(decbuf, n, 1, fpo) <= 0) {
 			goto_base16384_file_detailed_cleanup(encode, base16384_err_write_file, {
-				munmap(input_file, (size_t)inputsize);
+				munmap(input_file, (size_t)inputsize+16);
 				close(fd);
 			});
 		}
-		munmap(input_file, (size_t)inputsize);
+		munmap(input_file, (size_t)inputsize+16);
 		close(fd);
 	}
 	#endif
@@ -321,11 +321,11 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 		int n = base16384_decode(input_file+off, inputsize-off, encbuf);
 		if(n && fwrite(encbuf, n, 1, fpo) <= 0) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_write_file, {
-				munmap(input_file, (size_t)inputsize);
+				munmap(input_file, (size_t)inputsize+16);
 				close(fd);
 			});
 		}
-		munmap(input_file, (size_t)inputsize);
+		munmap(input_file, (size_t)inputsize+16);
 		close(fd);
 	}
 	#endif
