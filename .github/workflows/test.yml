@@ -21,4 +21,4 @@ jobs:
           cd build
           cmake -DBUILD=test ..
           make
-          make test || make test --rerun-failed --output-on-failure
+          make test || ctest --rerun-failed --output-on-failure
