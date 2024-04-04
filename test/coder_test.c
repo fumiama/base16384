@@ -6,9 +6,11 @@
 
 #include "base16384.h"
 
-char encbuf[4096+16];
-char decbuf[4096/7*8+16];
-char tstbuf[4096+16];
+#define TEST_SIZE (4096)
+
+char encbuf[TEST_SIZE+16];
+char decbuf[TEST_SIZE/7*8+16];
+char tstbuf[TEST_SIZE+16];
 
 #define loop_diff(target) \
     for(i = start; i < end; i++) { \
@@ -44,18 +46,18 @@ char tstbuf[4096+16];
 int main() {
     srand(time(NULL));
     int i, n;
-    for(i = 0; i < 4096; i += sizeof(int)) {
+    for(i = 0; i <= TEST_SIZE; i += sizeof(int)) {
         *(int*)(&encbuf[i]) = rand();
     }
-    fputs("testing base16384_encode/base16384_decode...\n", stderr);
-    for(i = 0; i < 4096; i++) {
+    fputs("testing base16384_en/decode...\n", stderr);
+    for(i = 0; i <= TEST_SIZE; i++) {
         n = base16384_encode(encbuf, i, decbuf);
         n = base16384_decode(decbuf, n, tstbuf);
         int decn = n;
         if (memcmp(encbuf, tstbuf, n)) return_error(i, n);
     }
-    fputs("testing base16384_encode_unsafe/base16384_decode_unsafe...\n", stderr);
-    for(i = 0; i < 4096; i++) {
+    fputs("testing base16384_en/ecode_unsafe...\n", stderr);
+    for(i = 0; i <= TEST_SIZE; i++) {
         n = base16384_encode_unsafe(encbuf, i, decbuf);
         n = base16384_decode_unsafe(decbuf, n, tstbuf);
         if ((n = memcmp(encbuf, tstbuf, n))) return_error(i, n);

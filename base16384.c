@@ -123,22 +123,6 @@ int main(int argc, char** argv) {
 		#endif
 	}
 
-	#define base16384_perror_case(n) case base16384_err_##n: perror("base16384_err_"#n)
-		if(exitstat) switch(exitstat) {
-			base16384_perror_case(get_file_size); break;
-			base16384_perror_case(fopen_output_file); break;
-			base16384_perror_case(fopen_input_file); break;
-			base16384_perror_case(write_file); break;
-			base16384_perror_case(open_input_file); break;
-			base16384_perror_case(map_input_file); break;
-			base16384_perror_case(read_file); break;
-			base16384_perror_case(invalid_file_name); break;
-			base16384_perror_case(invalid_commandline_parameter); break;
-			base16384_perror_case(invalid_decoding_checksum); break;
-			default: perror("base16384"); break;
-		}
-	#undef base16384_perror_case
-
-    return exitstat;
+    return base16384_perror(exitstat);
 
 }

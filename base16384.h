@@ -221,22 +221,46 @@ base16384_err_t base16384_decode_fp_detailed(base16384_typed_flag_params(FILE*))
 */
 base16384_err_t base16384_decode_fd_detailed(base16384_typed_flag_params(int));
 
-#define BASE16384_DEFINE_DEATILED_WRAP(method, name, type) \
-	static inline base16384_err_t base16384_##method##_##name##(base16384_typed_params(type)) { \
+#define BASE16384_WRAP_DECL(method, name, type) \
+	static inline base16384_err_t base16384_##method##_##name(base16384_typed_params(type)) { \
 		return base16384_##method##_##name##_detailed(input, output, encbuf, decbuf, 0); \
 	}
 
-	BASE16384_DEFINE_DEATILED_WRAP(encode, file, const char*);
-	BASE16384_DEFINE_DEATILED_WRAP(encode, fp, FILE*);
-	BASE16384_DEFINE_DEATILED_WRAP(encode, fd, int);
+	BASE16384_WRAP_DECL(encode, file, const char*);
+	BASE16384_WRAP_DECL(encode, fp, FILE*);
+	BASE16384_WRAP_DECL(encode, fd, int);
 
-	BASE16384_DEFINE_DEATILED_WRAP(decode, file, const char*);
-	BASE16384_DEFINE_DEATILED_WRAP(decode, fp, FILE*);
-	BASE16384_DEFINE_DEATILED_WRAP(decode, fd, int);
+	BASE16384_WRAP_DECL(decode, file, const char*);
+	BASE16384_WRAP_DECL(decode, fp, FILE*);
+	BASE16384_WRAP_DECL(decode, fd, int);
 
-#undef BASE16384_DEFINE_DEATILED_WRAP
+#undef BASE16384_WRAP_DECL
 
 #undef base16384_typed_flag_params
 #undef base16384_typed_params
+
+/**
+ * @brief call perror on error
+ * @param err the error
+ * @return the input parameter `err`
+*/
+static inline base16384_err_t base16384_perror(base16384_err_t err) {
+	#define base16384_perror_case(n) case base16384_err_##n: perror("base16384_err_"#n)
+		if(err) switch(err) {
+			base16384_perror_case(get_file_size); break;
+			base16384_perror_case(fopen_output_file); break;
+			base16384_perror_case(fopen_input_file); break;
+			base16384_perror_case(write_file); break;
+			base16384_perror_case(open_input_file); break;
+			base16384_perror_case(map_input_file); break;
+			base16384_perror_case(read_file); break;
+			base16384_perror_case(invalid_file_name); break;
+			base16384_perror_case(invalid_commandline_parameter); break;
+			base16384_perror_case(invalid_decoding_checksum); break;
+			default: perror("base16384"); break;
+		}
+	#undef base16384_perror_case
+	return err;
+}
 
 #endif
