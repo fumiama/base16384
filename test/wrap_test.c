@@ -1,3 +1,20 @@
+/* test/wrap_test.c
+ * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
+ * Copyright (c) 2022-2024 Fumiama Minamoto.
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifdef _WIN32
 	#include <io.h>
@@ -15,6 +32,7 @@
 
 #include "base16384.h"
 #include "binary.h"
+#include "file_test.h"
 
 #define TEST_SIZE (4096)
 #define TEST_INPUT_FILENAME "wrap_test_input.bin"
@@ -24,59 +42,6 @@
 char encbuf[BASE16384_ENCBUFSZ];
 char decbuf[BASE16384_DECBUFSZ];
 char tstbuf[BASE16384_ENCBUFSZ];
-
-#define ok(has_failed, reason) \
-    if (has_failed) { \
-        perror(reason); \
-        return 1; \
-    }
-
-#define loop_ok(has_failed, i, reason) \
-    if (has_failed) { \
-        fprintf(stderr, "loop @%d: ", i); \
-        perror(reason); \
-        return 1; \
-    }
-
-#define reset_and_truncate(fd, i) { \
-    fd = open(TEST_INPUT_FILENAME, O_RDWR); \
-    ok(!fd, "open"); \
-    loop_ok(lseek(fd, 0, SEEK_SET), i, "lseek"); \
-    loop_ok(ftruncate(fd, i), i, "ftruncate"); \
-}
-
-#define base16384_loop_ok(err) \
-    if (err) { \
-        fprintf(stderr, "loop @%d: ", i); \
-        base16384_perror(err); \
-        return 1; \
-    }
-
-#define validate_result() \
-    uint64_t buf, sum_input = 0, sum_validate = 0; \
-    fp = fopen(TEST_INPUT_FILENAME, "rb"); { \
-        loop_ok(!fp, i, "fopen"); \
-        while (fread(&buf, sizeof(sum_input), 1, fp) > 0) sum_input += buf; \
-        buf = 0; \
-        while (fread(&buf, 1, 1, fp) > 0) { \
-            sum_input += buf; \
-            sum_input = LEFTROTATE(sum_input, 4); \
-        } \
-    } fclose(fp); \
-    fp = fopen(TEST_VALIDATE_FILENAME, "rb"); { \
-        loop_ok(!fp, i, "fopen"); \
-        while (fread(&buf, sizeof(sum_validate), 1, fp) > 0) sum_validate += buf; \
-        buf = 0; \
-        while (fread(&buf, 1, 1, fp) > 0) { \
-            sum_validate += buf; \
-            sum_validate = LEFTROTATE(sum_validate, 4); \
-        } \
-    } fclose(fp); \
-    if (sum_input != sum_validate) { \
-        fprintf(stderr, "loop @%d, expect: %016llx, got: %016llx: ", i, (unsigned long long)sum_input, (unsigned long long)sum_validate); \
-        fputs(TEST_INPUT_FILENAME " and " TEST_VALIDATE_FILENAME " mismatch.", stderr); \
-        return 1; \
-    }
 
 #define init_input_file() \
     for(i = 0; i < TEST_SIZE; i += sizeof(int)) { \
