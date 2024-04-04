@@ -15,6 +15,10 @@ if (${isBigEndian})
     add_definitions(-DWORDS_BIGENDIAN)
 endif ()
 
+if (BUILD STREQUAL "test")
+    add_definitions(-DBASE16384_BUFSZ_FACTOR=1)
+endif ()
+
 add_executable(base16384_b base16384.c)
 
 IF ((NOT FORCE_32BIT) AND CMAKE_SIZEOF_VOID_P EQUAL 8)

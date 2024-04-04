@@ -393,40 +393,44 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 		errno = EINVAL;
 		return base16384_err_fopen_output_file;
 	}
-	off_t inputsize = _BASE16384_DECBUFSZ-1;
-	int cnt = 0;
+	off_t inputsize = _BASE16384_DECBUFSZ;
+	int p = 0, n;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	uint8_t remains[8];
 	decbuf[0] = 0;
-	if(read(input, decbuf, 2) != 2) {
+	if(read(input, remains, 2) != 2) {
 		return base16384_err_read_file;
 	}
-	if(decbuf[0] != (char)(0xfe)) {
-		cnt = read(input, decbuf+2, inputsize-2)+2;
-	} else {
-		cnt = read(input, decbuf, inputsize);
-	}
-	if(cnt > 0) do {
+	if(remains[0] != (uint8_t)(0xfe)) p = 2;
+	while((n = read(input, decbuf+p, inputsize-p)) > 0) {
+		if(p) {
+			memcpy(decbuf, remains, p);
+			n += p;
+			p = 0;
+		}
 		uint16_t next = is_next_end_fd(input);
 		if(errno) {
 			return base16384_err_read_file;
 		}
 		if((uint16_t)(~next)) {
-			if(next&0xff00) decbuf[cnt++] = '=';
-			decbuf[cnt++] = (char)(next&0x00ff);
+			if(next&0xff00) {
+				decbuf[n++] = '=';
+				decbuf[n++] = (char)(next&0x00ff);
+			} else remains[p++] = (char)(next&0x00ff);
 		}
 		#ifdef DEBUG
 			fprintf(stderr, "decode chunk: %d, last2: %c %02x\n", cnt, decbuf[cnt-2], (uint8_t)decbuf[cnt-1]);
 		#endif
-		cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
-		if(cnt && write(output, encbuf, cnt) != cnt) {
+		n = base16384_decode_unsafe(decbuf, n, encbuf);
+		if(n && write(output, encbuf, n) != n) {
 			return base16384_err_write_file;
 		}
 		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) {
-			if (calc_and_check_sum(&sum, cnt, encbuf)) {
+			if (calc_and_check_sum(&sum, n, encbuf)) {
 				errno = EINVAL;
 				return base16384_err_invalid_decoding_checksum;
 			}
 		}
-	} while((cnt = read(input, decbuf, inputsize)) > 0);
+	}
 	return base16384_err_ok;
 }

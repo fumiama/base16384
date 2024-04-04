@@ -105,7 +105,7 @@ char tstbuf[BASE16384_ENCBUFSZ];
     }
 
 #define test_fp_detailed(flag) \
-    fputs("testing base16384_en/decode_fp...\n", stderr); \
+    fputs("testing base16384_en/decode_fp with flag "#flag"...\n", stderr); \
     init_input_file(); \
     for(i = TEST_SIZE; i > 0; i--) { \
         reset_and_truncate(fd, i); \
@@ -137,7 +137,7 @@ char tstbuf[BASE16384_ENCBUFSZ];
     }
 
 #define test_fd_detailed(flag) \
-    fputs("testing base16384_en/decode_fd...\n", stderr); \
+    fputs("testing base16384_en/decode_fd with flag "#flag"...\n", stderr); \
     init_input_file(); \
     for(i = TEST_SIZE; i > 0; i--) { \
         reset_and_truncate(fd, i); \
