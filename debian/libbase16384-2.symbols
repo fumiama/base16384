@@ -1,10 +1,27 @@
 libbase16384.so.2 libbase16384-2 #MINVER#
 * Build-Depends-Package: libbase16384-dev
- base16384_decode@Base 2
+ base16384_encode_safe@Base 2.3
  base16384_encode@Base 2
+ base16384_encode_unsafe@Base 2.3
+
+ base16384_decode_safe@Base 2.3
+ base16384_decode@Base 2
+ base16384_decode_unsafe@Base 2.3
+
  base16384_encode_file@Base 2
  base16384_decode_file@Base 2
+
  base16384_encode_fp@Base 2
  base16384_decode_fp@Base 2
+
  base16384_encode_fd@Base 2
  base16384_decode_fd@Base 2
+
+ base16384_encode_file_detailed@Base 2.3
+ base16384_decode_file_detailed@Base 2.3
+
+ base16384_encode_fp_detailed@Base 2.3
+ base16384_decode_fp_detailed@Base 2.3
+
+ base16384_encode_fd_detailed@Base 2.3
+ base16384_decode_fd_detailed@Base 2.3

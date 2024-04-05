@@ -4,11 +4,11 @@ Upstream-Contact: Fumiama Minamoto <fumiama@foxmail.com>
 Source: https://github.com/fumiama/base16384
 
 Files: *
-Copyright: Copyright (c) 2022 Fumiama Minamoto
+Copyright: Copyright (c) 2022-2024 Fumiama Minamoto
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: Copyright (c) 2022 Fumiama Minamoto
+Copyright: Copyright (c) 2022-2024 Fumiama Minamoto
 License: GPL-3.0+
 
 License: GPL-3.0+
