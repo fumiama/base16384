@@ -57,7 +57,7 @@
 		#define htobe64(x) htonll(x)
 	#endif
 	#endif
-	#ifdef _MSC_VER
+	#ifdef _WIN32
 		#ifdef WORDS_BIGENDIAN
 			#define be16toh(x) (x)
 			#define be32toh(x) (x)
@@ -70,15 +70,15 @@
 				#define htobe64(x) (x)
 			#endif
 		#else
-			#define be16toh(x) _bitswap_ushort(x)
-			#define be32toh(x) _bitswap_ulong(x)
+			#define be16toh(x) _byteswap_ushort(x)
+			#define be32toh(x) _byteswap_ulong(x)
 			#ifdef IS_64BIT_PROCESSOR
-				#define be64toh(x) _bitswap_uint64(x)
+				#define be64toh(x) _byteswap_uint64(x)
 			#endif
-			#define htobe16(x) _bitswap_ushort(x)
-			#define htobe32(x) _bitswap_ulong(x)
+			#define htobe16(x) _byteswap_ushort(x)
+			#define htobe32(x) _byteswap_ulong(x)
 			#ifdef IS_64BIT_PROCESSOR
-				#define htobe64(x) _bitswap_uint64(x)
+				#define htobe64(x) _byteswap_uint64(x)
 			#endif
 		#endif
 	#endif
