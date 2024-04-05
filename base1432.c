@@ -255,7 +255,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	uint32_t* vals = (uint32_t*)data;
+	const uint32_t* vals = (const uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
 	for(; i < outlen - 7; i+=7) {	// n实际每次自增2
@@ -293,7 +293,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x003fff00;
 		valbuf.val = be32toh(sum);
 		memcpy(buf+i+4, valbuf.buf, 3);
-	} else if(offset--) {
+	} else if((*(uint8_t*)(&vals[n]) != '=') && offset--) {
 		int cnt = dlen-2-(int)n*(int)sizeof(uint32_t);
 		if (cnt > 4) cnt = 4;
 		memcpy(valbuf.buf, &vals[n], cnt);
@@ -312,6 +312,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 				buf[i++] = ((sum & 0x000f0000) >> 12) | ((sum & 0xf0000000) >> 28);
 				if(offset--) {
 					buf[i] = (sum & 0x0f000000) >> 20;
+					if(*(uint8_t*)(&vals[n]) == '=') return outlen;
 					memcpy(valbuf.buf, &vals[n], dlen-2-(int)n*(int)sizeof(uint32_t));
 					#ifdef WORDS_BIGENDIAN
 						sum = __builtin_bswap32(valbuf.val);
@@ -351,7 +352,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	uint32_t* vals = (uint32_t*)data;
+	const uint32_t* vals = (const uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
 	for(; i <= outlen - 7; i+=7) {	// n实际每次自增2
@@ -371,6 +372,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x003fff00;
 		*(uint32_t*)(buf+i+4) = be32toh(sum);
 	}
+	if(*(uint8_t*)(&vals[n]) == '=') return outlen;
 	if(offset--) {
 		// 这里有读取越界
 		#ifdef WORDS_BIGENDIAN
@@ -387,6 +389,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 				buf[i++] = ((sum & 0x000f0000) >> 12) | ((sum & 0xf0000000) >> 28);
 				if(offset--) {
 					buf[i] = (sum & 0x0f000000) >> 20;
+					if(*(uint8_t*)(&vals[n]) == '=') return outlen;
 					// 这里有读取越界
 					#ifdef WORDS_BIGENDIAN
 						sum = __builtin_bswap32(vals[n]);
@@ -426,7 +429,7 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	uint32_t* vals = (uint32_t*)data;
+	const uint32_t* vals = (const uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
 	for(; i < outlen-7; i+=7) {	// n实际每次自增2
@@ -448,6 +451,7 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 	}
 	register uint32_t sum = 0;
 	register uint32_t shift = htobe32(vals[n++]);
+	if(((shift>>24)&0xff) == 0x3d) return outlen;
 	if(((shift>>24)&0xff) < 0x4e) shift |= 0xff000000;
 	if(((shift>> 8)&0xff) < 0x4e) shift |= 0x0000ff00;
 	shift -= 0x4e004e00;
@@ -455,7 +459,11 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 	sum |= shift & 0xfffc0000;
 	shift <<= 2;
 	sum |= shift & 0x0003fff0;
-	shift = htobe32(vals[n++]);
+	shift = htobe32(vals[n]);
+	if(((shift>>24)&0xff) == 0x3d) {
+		*(uint32_t*)(buf+i) = be32toh(sum);
+		return outlen;
+	}
 	if(((shift>>24)&0xff) < 0x4e) shift |= 0xff000000;
 	if(((shift>> 8)&0xff) < 0x4e) shift |= 0x0000ff00;
 	shift -= 0x4e004e00;

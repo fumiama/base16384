@@ -54,6 +54,8 @@ static inline off_t get_file_size(const char* filepath) {
 	goto base16384_##method##_file_detailed_cleanup; \
 }
 
+#define do_sum_check(flag) ((flag)&(BASE16384_FLAG_DO_SUM_CHECK_FORCELY|BASE16384_FLAG_SUM_CHECK_ON_REMAIN))
+
 base16384_err_t base16384_encode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag) {
 	off_t inputsize;
 	FILE *fp = NULL, *fpo;
@@ -98,7 +100,15 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 				if(n > 0) cnt++;
 				else break;
 			}
-			if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
+			if(do_sum_check(flag)) {
+				sum = calc_sum(sum, cnt, encbuf);
+				if(cnt%7) { // last encode
+					*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
+					#ifdef DEBUG
+						fprintf(stderr, "writesum: %08x\n", sum);
+					#endif
+				}
+			}
 			n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 			if(n && fwrite(decbuf, n, 1, fpo) <= 0) {
 				goto_base16384_file_detailed_cleanup(encode, base16384_err_write_file, {});
@@ -157,7 +167,12 @@ base16384_err_t base16384_encode_fp_detailed(FILE* input, FILE* output, char* en
 			if(n > 0) cnt++;
 			else break;
 		}
-		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
+		if(do_sum_check(flag)) {
+			sum = calc_sum(sum, cnt, encbuf);
+			if(cnt%7) { // last encode
+				*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
+			}
+		}
 		n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 		if(n && fwrite(decbuf, n, 1, output) <= 0) {
 			return base16384_err_write_file;
@@ -184,7 +199,12 @@ base16384_err_t base16384_encode_fd_detailed(int input, int output, char* encbuf
 			if(n > 0) cnt++;
 			else break;
 		}
-		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_and_embed_sum(sum, cnt, encbuf);
+		if(do_sum_check(flag)) {
+			sum = calc_sum(sum, cnt, encbuf);
+			if(cnt%7) { // last encode
+				*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
+			}
+		}
 		n = base16384_encode_unsafe(encbuf, cnt, decbuf);
 		if(n && write(output, decbuf, n) < n) {
 			return base16384_err_write_file;
@@ -269,10 +289,10 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 				goto_base16384_file_detailed_cleanup(decode, base16384_err_write_file, {});
 			}
 			total_decoded_len += cnt;
-			if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_sum(sum, cnt, encbuf);
+			if(do_sum_check(flag)) sum = calc_sum(sum, cnt, encbuf);
 			last_encbuf_cnt = cnt;
 		}
-		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
+		if(do_sum_check(flag)
 			&& (flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || total_decoded_len >= _BASE16384_ENCBUFSZ)
 			&& last_decbuf_cnt > 2
 			&& decbuf[last_decbuf_cnt-2] == '='
@@ -346,10 +366,10 @@ base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* en
 			return base16384_err_write_file;
 		}
 		total_decoded_len += cnt;
-		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_sum(sum, cnt, encbuf);
+		if(do_sum_check(flag)) sum = calc_sum(sum, cnt, encbuf);
 		last_encbuf_cnt = cnt;
 	}
-	if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
+	if(do_sum_check(flag)
 		&& (flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || total_decoded_len >= _BASE16384_ENCBUFSZ)
 		&& last_decbuf_cnt > 2
 		&& decbuf[last_decbuf_cnt-2] == '='
@@ -425,10 +445,10 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 			return base16384_err_write_file;
 		}
 		total_decoded_len += n;
-		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_sum(sum, n, encbuf);
+		if(do_sum_check(flag)) sum = calc_sum(sum, n, encbuf);
 		last_encbuf_cnt = n;
 	}
-	if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
+	if(do_sum_check(flag)
 		&& (flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || total_decoded_len >= _BASE16384_ENCBUFSZ)
 		&& last_decbuf_cnt > 2
 		&& decbuf[last_decbuf_cnt-2] == '='

@@ -70,15 +70,15 @@
 				#define htobe64(x) (x)
 			#endif
 		#else
-			#define be16toh(x) _byteswap_ushort(x)
-			#define be32toh(x) _byteswap_ulong(x)
+			#define be16toh(x) _bitswap_ushort(x)
+			#define be32toh(x) _bitswap_ulong(x)
 			#ifdef IS_64BIT_PROCESSOR
-				#define be64toh(x) _byteswap_uint64(x)
+				#define be64toh(x) _bitswap_uint64(x)
 			#endif
-			#define htobe16(x) _byteswap_ushort(x)
-			#define htobe32(x) _byteswap_ulong(x)
+			#define htobe16(x) _bitswap_ushort(x)
+			#define htobe32(x) _bitswap_ulong(x)
 			#ifdef IS_64BIT_PROCESSOR
-				#define htobe64(x) _byteswap_uint64(x)
+				#define htobe64(x) _bitswap_uint64(x)
 			#endif
 		#endif
 	#endif
@@ -86,6 +86,9 @@
 
 // leftrotate function definition
 #define LEFTROTATE(x, c) (((x) << (c)) | ((x) >> (sizeof(x)*8 - (c))))
+
+// initial sum value used in BASE16384_FLAG_SUM_CHECK_ON_REMAIN
+#define BASE16384_SIMPLE_SUM_INIT_VALUE		(0x8e29c213)
 
 static inline uint32_t calc_sum(uint32_t sum, size_t cnt, const char* encbuf) {
 	size_t i;
@@ -99,20 +102,21 @@ static inline uint32_t calc_sum(uint32_t sum, size_t cnt, const char* encbuf) {
 	return sum;
 }
 
-static inline uint32_t calc_and_embed_sum(uint32_t sum, size_t cnt, char* encbuf) {
-	sum = calc_sum(sum, cnt, encbuf);
-	if(cnt%7) { // last encode
-		*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
-	}
-	return sum;
-}
-
 static inline int check_sum(uint32_t sum, uint32_t sum_read_raw, int offset) {
-	int shift = (int[]){0, 26, 20, 28, 22, 30, 24}[offset%7];
+	offset = offset%7;
+	if(!offset--) return 0; // no remain bits, pass
+	// offset 1: 0011 1111 1100 0000							remain: 3*2 bits
+	// offset 2: 0011 1111 1111 1111	0011 0000 0000 0000		remain: 6*2 bits
+	// offset 3: 0011 1111 1111 0000							remain: 2*2 bits
+	// offset 4: 0011 1111 1111 1111	0011 1100 0000 0000		remain: 5*2 bits
+	// offset 5: 0011 1111 1111 1100							remain: 1*2 bits
+	// offset 6: 0011 1111 1111 1111	0011 1111 0000 0000		remain: 4*2 bits
+	// encode: 0415263 (6-1) per 3bits, thus 0x021ab3
+	int shift = sizeof(uint32_t)*8 - ((0x021ab3>>(offset*3))&0x07)*2;
 	uint32_t sum_read = be32toh(sum_read_raw) >> shift;
 	sum >>= shift;
 	#ifdef DEBUG
-		fprintf(stderr, "offset: %d, mysum: %08x, sumrd: %08x\n", offset, sum, sum_read);
+		fprintf(stderr, "shift: %d, offset: %d, mysum: %08x, sumrd: %08x\n", shift, offset+1, sum, sum_read);
 	#endif
 	return sum != sum_read;
 }

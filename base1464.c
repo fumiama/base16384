@@ -226,7 +226,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	uint64_t* vals = (uint64_t*)data;
+	const uint64_t* vals = (const uint64_t*)data;
 	uint64_t n = 0;
 	int64_t i = 0;
 	for(; i < outlen - 7; n++, i+=7) {
@@ -256,7 +256,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x00000000003fff00;
 		valbuf.val = be64toh(sum);
 		memcpy(buf+i, valbuf.buf, 7);
-	} else if(offset--) {
+	} else if((*(uint8_t*)(&vals[n]) != '=') && offset--) {
 		memcpy(valbuf.buf, &vals[n], dlen-2-(int)n*(int)sizeof(uint64_t));
 		#ifdef WORDS_BIGENDIAN
 			register uint64_t sum = __builtin_bswap64(valbuf.val) - 0x000000000000004e;
@@ -303,7 +303,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	uint64_t* vals = (uint64_t*)data;
+	const uint64_t* vals = (const uint64_t*)data;
 	uint64_t n = 0;
 	int64_t i = 0;
 	for(; i <= outlen - 7; n++, i+=7) {
@@ -319,6 +319,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x00000000003fff00;
 		*(uint64_t*)(buf+i) = be64toh(sum);
 	}
+	if(*(uint8_t*)(&vals[n]) == '=') return outlen;
 	if(offset--) {
 		// 这里有读取越界
 		#ifdef WORDS_BIGENDIAN
@@ -366,7 +367,7 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 		}
 	}
 	outlen = outlen / 8 * 7 + offset;
-	uint64_t* vals = (uint64_t*)data;
+	const uint64_t* vals = (const uint64_t*)data;
 	uint64_t n = 0;
 	int64_t i = 0;
 	for(; i < outlen-7; n++, i+=7) {
@@ -384,6 +385,7 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 	}
 	register uint64_t sum = 0;
 	register uint64_t shift = htobe64(vals[n]);
+	if(((shift>>56)&0xff) == 0x3d) return outlen;
 	if(((shift>>56)&0xff) < 0x4e) shift |= 0xff00000000000000;
 	if(((shift>>40)&0xff) < 0x4e) shift |= 0x0000ff0000000000;
 	if(((shift>>24)&0xff) < 0x4e) shift |= 0x00000000ff000000;
