@@ -16,6 +16,7 @@ jobs:
       - name: Checkout Code
         id: checkout
         uses: actions/checkout@v2
+        run: echo ::set-output name=VERSION::$( git describe --tags --abbrev=0 )
 
       - name: Setup Build Tools
         run: |

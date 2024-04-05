@@ -25,7 +25,7 @@
 typedef union {
 	uint8_t buf[4];
 	uint32_t val;
-} remainder;
+} base16384_union_remainder;
 
 int base16384_encode_safe(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
@@ -60,7 +60,7 @@ int base16384_encode_safe(const char* data, int dlen, char* buf) {
 		sum += 0x4e004e00;
 		vals[n++] = be32toh(sum);
 	}
-	remainder valbuf;
+	base16384_union_remainder valbuf;
 	if(dlen - i == 7) {
 		register uint32_t sum = 0;
 		register uint32_t shift = htobe32(*(uint32_t*)(data+i));
@@ -276,7 +276,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x003fff00;
 		*(uint32_t*)(buf+i+4) = be32toh(sum);
 	}
-	remainder valbuf;
+	base16384_union_remainder valbuf;
 	if(outlen - i == 7) {
 		register uint32_t sum = 0;
 		register uint32_t shift = htobe32(vals[n++]) - 0x4e004e00;
