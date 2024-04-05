@@ -39,9 +39,6 @@ int base16384_encode_safe(const char* data, int dlen, char* buf) {
 		case 6: outlen += 10; break;
 		default: break;
 	}
-	#ifdef DEBUG
-		printf("outlen: %llu, offset: %u, malloc: %llu\n", outlen, offset, outlen + 8);
-	#endif
 	uint64_t* vals = (uint64_t*)buf;
 	uint64_t n = 0;
 	int64_t i = 0;
@@ -57,9 +54,6 @@ int base16384_encode_safe(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x0000000000003fff;
 		sum += 0x4e004e004e004e00;
 		vals[n++] = be64toh(sum);
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 	}
 	remainder valbuf;
 	if(dlen - i == 7) {
@@ -108,9 +102,6 @@ int base16384_encode_safe(const char* data, int dlen, char* buf) {
 			valbuf.val = sum;
 		#endif
 		memcpy(&vals[n], valbuf.buf, outlen-2-(int)n*(int)sizeof(uint64_t));
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 		buf[outlen - 2] = '=';
 		buf[outlen - 1] = offset;
 	}
@@ -130,9 +121,6 @@ int base16384_encode(const char* data, int dlen, char* buf) {
 		case 6: outlen += 10; break;
 		default: break;
 	}
-	#ifdef DEBUG
-		printf("outlen: %llu, offset: %u, malloc: %llu\n", outlen, offset, outlen + 8);
-	#endif
 	uint64_t* vals = (uint64_t*)buf;
 	uint64_t n = 0;
 	int64_t i = 0;
@@ -148,9 +136,6 @@ int base16384_encode(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x0000000000003fff;
 		sum += 0x4e004e004e004e00;
 		vals[n++] = be64toh(sum);
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 	}
 	int o = offset;
 	if(o--) {
@@ -182,9 +167,6 @@ int base16384_encode(const char* data, int dlen, char* buf) {
 		#else
 			vals[n] = sum;
 		#endif
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 		buf[outlen - 2] = '=';
 		buf[outlen - 1] = offset;
 	}
@@ -204,9 +186,6 @@ int base16384_encode_unsafe(const char* data, int dlen, char* buf) {
 		case 6: outlen += 10; break;
 		default: break;
 	}
-	#ifdef DEBUG
-		printf("outlen: %llu, offset: %u, malloc: %llu\n", outlen, offset, outlen + 8);
-	#endif
 	uint64_t* vals = (uint64_t*)buf;
 	uint64_t n = 0;
 	int64_t i = 0;
@@ -222,9 +201,6 @@ int base16384_encode_unsafe(const char* data, int dlen, char* buf) {
 		sum |= shift & 0x0000000000003fff;
 		sum += 0x4e004e004e004e00;
 		vals[n++] = be64toh(sum);
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 	}
 	if(offset) {
 		buf[outlen - 2] = '=';
@@ -265,9 +241,6 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 		shift <<= 2;
 		sum |= shift & 0x00000000003fff00;
 		*(uint64_t*)(buf+i) = be64toh(sum);
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 	}
 	remainder valbuf;
 	if(outlen - i == 7) {
@@ -345,9 +318,6 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 		shift <<= 2;
 		sum |= shift & 0x00000000003fff00;
 		*(uint64_t*)(buf+i) = be64toh(sum);
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 	}
 	if(offset--) {
 		// 这里有读取越界
@@ -411,9 +381,6 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 		shift <<= 2;
 		sum |= shift & 0x00000000003fff00;
 		*(uint64_t*)(buf+i) = be64toh(sum);
-		#ifdef DEBUG
-			printf("i: %llu, add sum: %016llx\n", i, sum);
-		#endif
 	}
 	register uint64_t sum = 0;
 	register uint64_t shift = htobe64(vals[n]);

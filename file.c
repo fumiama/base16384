@@ -56,9 +56,7 @@ static inline off_t get_file_size(const char* filepath) {
 
 base16384_err_t base16384_encode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag) {
 	off_t inputsize;
-	FILE* fp = NULL;
-	FILE* fpo;
-	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	FILE *fp = NULL, *fpo;
 	int errnobak = 0, is_stdin = is_standard_io(input);
 	base16384_err_t retval = base16384_err_ok;
 	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
@@ -91,11 +89,8 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 			fputc(0xFE, fpo);
 			fputc(0xFF, fpo);
 		}
-		#ifdef DEBUG
-			inputsize = 917504;
-			fprintf(stderr, "inputsize: %lld\n", inputsize);
-		#endif
 		size_t cnt;
+		uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 		while((cnt = fread(encbuf, sizeof(char), inputsize, fp)) > 0) {
 			int n;
 			while(cnt%7) {
@@ -252,10 +247,8 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 		if(errno) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_read_file, {});
 		}
-		#ifdef DEBUG
-			fprintf(stderr, "inputsize: %lld\n", inputsize);
-		#endif
-		int cnt;
+		int cnt, last_encbuf_cnt = 0, last_decbuf_cnt = 0, offset = 0;
+		size_t total_decoded_len = 0;
 		while((cnt = fread(decbuf, sizeof(char), inputsize, fp)) > 0) {
 			int n;
 			while(cnt%8) {
@@ -269,16 +262,23 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 				decbuf[cnt++] = end;
 			}
 			if(errno) goto_base16384_file_detailed_cleanup(decode, base16384_err_read_file, {});
+			offset = decbuf[cnt-1];
+			last_decbuf_cnt = cnt;
 			cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
 			if(cnt && fwrite(encbuf, cnt, 1, fpo) <= 0) {
 				goto_base16384_file_detailed_cleanup(decode, base16384_err_write_file, {});
 			}
-			if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) {
-				if(calc_and_check_sum(&sum, cnt, encbuf)) {
-					errno = EINVAL;
-					goto_base16384_file_detailed_cleanup(decode, base16384_err_invalid_decoding_checksum, {});
-				}
-			}
+			total_decoded_len += cnt;
+			if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_sum(sum, cnt, encbuf);
+			last_encbuf_cnt = cnt;
+		}
+		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
+			&& total_decoded_len >= _BASE16384_ENCBUFSZ
+			&& last_decbuf_cnt > 2
+			&& decbuf[last_decbuf_cnt-2] == '='
+			&& check_sum(sum, *(uint32_t*)(&encbuf[last_encbuf_cnt]), offset)) {
+			errno = EINVAL;
+			goto_base16384_file_detailed_cleanup(decode, base16384_err_invalid_decoding_checksum, {});
 		}
 	#if !defined _WIN32 && !defined __cosmopolitan
 	} else { // small file, use mmap & fwrite
@@ -324,7 +324,8 @@ base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* en
 	if(errno) {
 		return base16384_err_read_file;
 	}
-	int cnt;
+	int cnt, last_encbuf_cnt = 0, last_decbuf_cnt = 0, offset = 0;
+	size_t total_decoded_len = 0;
 	while((cnt = fread(decbuf, sizeof(char), inputsize, input)) > 0) {
 		int n;
 		while(cnt%8) {
@@ -338,16 +339,23 @@ base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* en
 			decbuf[cnt++] = end;
 		}
 		if(errno) return base16384_err_read_file;
+		offset = decbuf[cnt-1];
+		last_decbuf_cnt = cnt;
 		cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
 		if(cnt && fwrite(encbuf, cnt, 1, output) <= 0) {
 			return base16384_err_write_file;
 		}
-		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) {
-			if (calc_and_check_sum(&sum, cnt, encbuf)) {
-				errno = EINVAL;
-				return base16384_err_invalid_decoding_checksum;
-			}
-		}
+		total_decoded_len += cnt;
+		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_sum(sum, cnt, encbuf);
+		last_encbuf_cnt = cnt;
+	}
+	if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
+		&& total_decoded_len >= _BASE16384_ENCBUFSZ
+		&& last_decbuf_cnt > 2
+		&& decbuf[last_decbuf_cnt-2] == '='
+		&& check_sum(sum, *(uint32_t*)(&encbuf[last_encbuf_cnt]), offset)) {
+		errno = EINVAL;
+		return base16384_err_invalid_decoding_checksum;
 	}
 	return base16384_err_ok;
 }
@@ -373,15 +381,21 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 		errno = EINVAL;
 		return base16384_err_fopen_output_file;
 	}
+
 	off_t inputsize = _BASE16384_DECBUFSZ;
-	int p = 0, n;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	uint8_t remains[8];
+
 	decbuf[0] = 0;
 	if(read(input, remains, 2) != 2) {
 		return base16384_err_read_file;
 	}
+
+	int p = 0;
 	if(remains[0] != (uint8_t)(0xfe)) p = 2;
+
+	int n, last_encbuf_cnt = 0, last_decbuf_cnt = 0, offset = 0;
+	size_t total_decoded_len = 0;
 	while((n = read(input, decbuf+p, inputsize-p)) > 0) {
 		if(p) {
 			memcpy(decbuf, remains, p);
@@ -404,19 +418,23 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 				decbuf[n++] = (char)(next&0x00ff);
 			} else remains[p++] = (char)(next&0x00ff);
 		}
-		#ifdef DEBUG
-			fprintf(stderr, "decode chunk: %d, last2: %c %02x\n", cnt, decbuf[cnt-2], (uint8_t)decbuf[cnt-1]);
-		#endif
+		offset = decbuf[n-1];
+		last_decbuf_cnt = n;
 		n = base16384_decode_unsafe(decbuf, n, encbuf);
 		if(n && write(output, encbuf, n) != n) {
 			return base16384_err_write_file;
 		}
-		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) {
-			if (calc_and_check_sum(&sum, n, encbuf)) {
-				errno = EINVAL;
-				return base16384_err_invalid_decoding_checksum;
-			}
-		}
+		total_decoded_len += n;
+		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN) sum = calc_sum(sum, n, encbuf);
+		last_encbuf_cnt = n;
+	}
+	if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
+		&& total_decoded_len >= _BASE16384_ENCBUFSZ
+		&& last_decbuf_cnt > 2
+		&& decbuf[last_decbuf_cnt-2] == '='
+		&& check_sum(sum, *(uint32_t*)(&encbuf[last_encbuf_cnt]), offset)) {
+		errno = EINVAL;
+		return base16384_err_invalid_decoding_checksum;
 	}
 	return base16384_err_ok;
 }

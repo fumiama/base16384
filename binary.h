@@ -87,33 +87,15 @@
 // leftrotate function definition
 #define LEFTROTATE(x, c) (((x) << (c)) | ((x) >> (sizeof(x)*8 - (c))))
 
-static inline uint32_t calc_sum(uint32_t sum, size_t cnt, char* encbuf) {
-	uint32_t i;
-	#ifdef DEBUG
-		fprintf(stderr, "cnt: %zu, roundin: %08x, ", cnt, sum);
-	#endif
-	for(i = 0; i < cnt/sizeof(sum); i++) {
-		#ifdef DEBUG
-			if (!i) {
-				fprintf(stderr, "firstval: %08x, ", htobe32(((uint32_t*)encbuf)[i]));
-			}
-		#endif
-		sum += ~LEFTROTATE(htobe32(((uint32_t*)encbuf)[i]), encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
+static inline uint32_t calc_sum(uint32_t sum, size_t cnt, const char* encbuf) {
+	size_t i;
+	uint32_t buf;
+	for(i = 0; i < cnt; i++) {
+		buf = (uint32_t)(encbuf[i])&0xff;
+		buf = ((buf<<(24-6))&0x03000000) | ((buf<<(16-4))&0x00030000) | ((buf<<(8-2))&0x00000300) | (buf&0x03);
+		sum += buf;
+		sum = ~LEFTROTATE(sum, 3);
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "roundmid: %08x", sum);
-	#endif
-	size_t rem = cnt % sizeof(sum);
-	if(rem) {
-		uint32_t x = htobe32(((uint32_t*)encbuf)[i]) & (0xffffffff << (8*(sizeof(sum)-rem)));
-		sum += ~LEFTROTATE(x, encbuf[i*sizeof(sum)]%(8*sizeof(sum)));
-		#ifdef DEBUG
-			fprintf(stderr, ", roundrem:%08x\n", sum);
-		#endif
-	}
-	#ifdef DEBUG
-		else fprintf(stderr, "\n");
-	#endif
 	return sum;
 }
 
@@ -125,19 +107,14 @@ static inline uint32_t calc_and_embed_sum(uint32_t sum, size_t cnt, char* encbuf
 	return sum;
 }
 
-static inline int calc_and_check_sum(uint32_t* s, size_t cnt, char* encbuf) {
-	uint32_t sum = calc_sum(*s, cnt, encbuf);
-	if(cnt%7) { // is last decode block
-		int shift = (int[]){0, 26, 20, 28, 22, 30, 24}[cnt%7];
-		uint32_t sum_read = be32toh((*(uint32_t*)(&encbuf[cnt]))) >> shift;
-		sum >>= shift;
-		#ifdef DEBUG
-			fprintf(stderr, "cntrm: %lu, mysum: %08x, sumrd: %08x\n", cnt%7, sum, sum_read);
-		#endif
-		return sum != sum_read;
-	}
-	*s = sum;
-	return 0;
+static inline int check_sum(uint32_t sum, uint32_t sum_read_raw, int offset) {
+	int shift = (int[]){0, 26, 20, 28, 22, 30, 24}[offset%7];
+	uint32_t sum_read = be32toh(sum_read_raw) >> shift;
+	sum >>= shift;
+	#ifdef DEBUG
+		fprintf(stderr, "offset: %d, mysum: %08x, sumrd: %08x\n", offset, sum, sum_read);
+	#endif
+	return sum != sum_read;
 }
 
 #endif
