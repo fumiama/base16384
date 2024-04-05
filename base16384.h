@@ -244,9 +244,7 @@ base16384_err_t base16384_decode_fp_detailed(base16384_typed_flag_params(FILE*))
 base16384_err_t base16384_decode_fd_detailed(base16384_typed_flag_params(int));
 
 #define BASE16384_WRAP_DECL(method, name, type) \
-	static inline base16384_err_t base16384_##method##_##name(base16384_typed_params(type)) { \
-		return base16384_##method##_##name##_detailed(input, output, encbuf, decbuf, 0); \
-	}
+	base16384_err_t base16384_##method##_##name(base16384_typed_params(type));
 
 	BASE16384_WRAP_DECL(encode, file, const char*);
 	BASE16384_WRAP_DECL(encode, fp, FILE*);
