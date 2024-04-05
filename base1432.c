@@ -16,15 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __cosmopolitan
 #include <string.h>
+#endif
 
 #include "binary.h"
 
-union remainder {
+typedef union {
 	uint8_t buf[4];
 	uint32_t val;
-};
-typedef union remainder remainder;
+} remainder;
 
 int base16384_encode_safe(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;

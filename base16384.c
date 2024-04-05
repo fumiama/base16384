@@ -45,7 +45,13 @@ static base16384_err_t print_usage() {
 	#ifndef BASE16384_VERSION_DATE
 		#define BASE16384_VERSION_DATE "unknown date"
 	#endif
-	fputs("Copyright (c) 2022-2024 Fumiama Minamoto.\nBase16384 "BASE16384_VERSION" ("BASE16384_VERSION_DATE"). Usage:\n", stderr);
+	fputs(
+		"Copyright (c) 2022-2024 Fumiama Minamoto.\nBase16384 "
+		BASE16384_VERSION
+		" ("
+			BASE16384_VERSION_DATE
+		"). Usage:\n", stderr
+	);
 	fputs("base16384 [-edtn] [inputfile] [outputfile]\n", stderr);
 	fputs("  -e\t\tencode (default)\n", stderr);
 	fputs("  -d\t\tdecode\n", stderr);
