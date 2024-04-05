@@ -1,6 +1,6 @@
 /* base16384.c
  * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
- * Copyright (c) 2022-2023 Fumiama Minamoto.
+ * Copyright (c) 2022-2024 Fumiama Minamoto.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,77 +38,103 @@ unsigned long get_start_ms() {
 }
 #endif
 
-static void print_usage() {
-	puts("Copyright (c) 2022-2023 Fumiama Minamoto.\nBase16384 2.2.5 (August 26th 2023). Usage:");
-	puts("base16384 [-edt] [inputfile] [outputfile]");
-	puts("  -e\t\tencode");
-	puts("  -d\t\tdecode");
-	puts("  -t\t\tshow spend time");
-	puts("  inputfile\tpass - to read from stdin");
-	puts("  outputfile\tpass - to write to stdout");
+static base16384_err_t print_usage() {
+	#ifndef BASE16384_VERSION
+		#define BASE16384_VERSION "dev"
+	#endif
+	#ifndef BASE16384_VERSION_DATE
+		#define BASE16384_VERSION_DATE "unknown date"
+	#endif
+	fputs(
+		"Copyright (c) 2022-2024 Fumiama Minamoto.\nBase16384 "
+		BASE16384_VERSION
+		" ("
+			BASE16384_VERSION_DATE
+		"). Usage:\n", stderr
+	);
+	fputs("base16384 [-edtn] [inputfile] [outputfile]\n", stderr);
+	fputs("  -e\t\tencode (default)\n", stderr);
+	fputs("  -d\t\tdecode\n", stderr);
+	fputs("  -t\t\tshow spend time\n", stderr);
+	fputs("  -n\t\tdon't write utf16be file header (0xFEFF)\n", stderr);
+	fputs("  -c\t\tembed or validate checksum in remainder\n", stderr);
+	fputs("  -C\t\tdo -c forcely\n", stderr);
+	fputs("  inputfile\tpass - to read from stdin\n", stderr);
+	fputs("  outputfile\tpass - to write to stdout\n", stderr);
+	return base16384_err_invalid_commandline_parameter;
 }
 
 int main(int argc, char** argv) {
-	if(argc != 4 || argv[1][0] != '-') {
-		print_usage();
-        return -1;
-    }
-	int flaglen = strlen(argv[1]);
-	if(flaglen <= 1 || flaglen > 3) {
-		print_usage();
-        return -2;
-	}
+
+	const char* cmd = argv[1];
+	if(argc != 4 || cmd[0] != '-') return print_usage();
+
+	int flaglen = strlen(cmd);
+	if(flaglen <= 1 || flaglen > 5) return print_usage();
+
 	#ifdef _WIN32
 		clock_t t = 0;
 	#else
 		unsigned long t = 0;
 	#endif
+
+	uint16_t is_encode = 1, use_timer = 0, no_header = 0, use_checksum = 0;
+	#define set_flag(f, v) ((f) = (((((f)>>8)+1) << 8)&0xff00) | (v&0x00ff))
+	#define flag_has_been_set(f) ((f)>>8)
+	#define set_or_test_flag(f, v) (flag_has_been_set(f)?1:(set_flag(f, v), 0))
+	while(--flaglen) switch(cmd[flaglen]) { // skip cmd[0] = '-'
+		case 'e':
+			if(set_or_test_flag(is_encode, 1)) return print_usage();
+		break;
+		case 'd':
+			if(set_or_test_flag(is_encode, 0)) return print_usage();
+		break;
+		case 't':
+			if(set_or_test_flag(use_timer, 1)) return print_usage();
+		break;
+		case 'n':
+			if(set_or_test_flag(no_header, 1)) return print_usage();
+		break;
+		case 'c':
+			if(set_or_test_flag(use_checksum, 1)) return print_usage();
+		break;
+		case 'C':
+			if(set_or_test_flag(use_checksum, 2)) return print_usage();
+		break;
+		default:
+			return print_usage();
+		break;
+	}
+	#define clear_high_byte(x) ((x) &= 0x00ff)
+	clear_high_byte(is_encode); clear_high_byte(use_timer);
+	clear_high_byte(no_header); clear_high_byte(use_checksum);
+
+	if(use_timer) {
+		#ifdef _WIN32
+			t = clock();
+		#else
+			t = get_start_ms();
+		#endif
+	}
+
 	base16384_err_t exitstat = base16384_err_ok;
-	char cmd = argv[1][1];
-	if(cmd == 't') {
-		if(flaglen == 2) {
-			print_usage(); return -3;
-		}
+
+	#define do_coding(method) base16384_##method##_file_detailed( \
+		argv[2], argv[3], encbuf, decbuf, \
+		(no_header?BASE16384_FLAG_NOHEADER:0) \
+		| ((use_checksum&1)?BASE16384_FLAG_SUM_CHECK_ON_REMAIN:0) \
+		| ((use_checksum&2)?BASE16384_FLAG_DO_SUM_CHECK_FORCELY:0) \
+	)
+		exitstat = is_encode?do_coding(encode):do_coding(decode);
+	#undef do_coding
+	if(t) {
 		#ifdef _WIN32
-			t = clock();
+			fprintf(stderr, "spend time: %lums\n", clock() - t);
 		#else
-			t = get_start_ms();
-		#endif
-		cmd = argv[1][2];
-	} else if(flaglen == 3) {
-		if(argv[1][2] != 't') {
-			print_usage(); return -4;
-		}
-		#ifdef _WIN32
-			t = clock();
-		#else
-			t = get_start_ms();
+			fprintf(stderr, "spend time: %lums\n", get_start_ms() - t);
 		#endif
 	}
-	switch(cmd) {
-		case 'e': exitstat = base16384_encode_file(argv[2], argv[3], encbuf, decbuf); break;
-		case 'd': exitstat = base16384_decode_file(argv[2], argv[3], encbuf, decbuf); break;
-		default: print_usage(); return -5;
-	}
-	if(t && !exitstat && *(uint16_t*)(argv[3]) != *(uint16_t*)"-") {
-		#ifdef _WIN32
-			printf("spend time: %lums\n", clock() - t);
-		#else
-			printf("spend time: %lums\n", get_start_ms() - t);
-		#endif
-	}
-	#define print_base16384_err(n) case base16384_err_##n: perror("base16384_err_"#n); break
-	if(exitstat) switch(exitstat) {
-		print_base16384_err(get_file_size);
-		print_base16384_err(fopen_output_file);
-		print_base16384_err(fopen_input_file);
-		print_base16384_err(write_file);
-		print_base16384_err(open_input_file);
-		print_base16384_err(map_input_file);
-		print_base16384_err(read_file);
-		print_base16384_err(invalid_file_name);
-		default: perror("base16384"); break;
-	}
-	#undef print_base16384_err
-    return exitstat;
+
+    return base16384_perror(exitstat);
+
 }

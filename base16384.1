@@ -1,9 +1,9 @@
-.TH BASE16384 1 "26 August 2023" "GNU" "User Commands"
+.TH BASE16384 1 "5 April 2024" "GNU" "User Commands"
 .SH NAME
 base16384 \- Encode binary files to printable utf16be
 .SH SYNOPSIS
 .B base16384
--[e|d|t] <\fIinputfile\fR> <\fIoutputfile\fR>
+-[edtn] <\fIinputfile\fR> <\fIoutputfile\fR>
 .SH DESCRIPTION
 .LP
 There are
@@ -27,7 +27,30 @@ to
 .sp 1
 .TP 0.5i
 \fB\-e\fR
-Read data from \fIinputfile\fR and encode them into \fIoutputfile\fR.
+Read data from \fIinputfile\fR and encode them into \fIoutputfile\fR. It's the default option when neither
+.B -e
+nor
+.B -d
+is specified.
+.TP 0.5i
+\fB\-d\fR
+Read data from \fIinputfile\fR and decode them into \fIoutputfile\fR.
+.TP 0.5i
+\fB\-t\fR
+Show spend time.
+.TP 0.5i
+\fB\-n\fR
+Do not write utf16be file header
+.B 0xFEFF
+to the output.
+.TP 0.5i
+\fB\-c\fR
+Embed or validate checksum in remainder when using \fIstdin\fR or \fIstdout\fR or inputsize > _BASE16384_ENCBUFSZ.
+.TP 0.5i
+\fB\-C\fR
+Do
+.B -c
+forcely.
 .TP 0.5i
 \fB\-d\fR
 Read data from \fIinputfile\fR and decode them into \fIoutputfile\fR.
@@ -36,10 +59,14 @@ Read data from \fIinputfile\fR and decode them into \fIoutputfile\fR.
 Show spend time.
 .TP 0.5i
 \fBinputfile\fR
-An absolute or relative file path. Specially, pass - to read from stdin.
+An absolute or relative file path. Specially, pass
+.B -
+to read from \fIstdin\fR.
 .TP 0.5i
 \fBoutputfile\fR
-An absolute or relative file path. Specially, pass - to write to stdout.
+An absolute or relative file path. Specially, pass
+.B -
+to write to \fIstdout\fR.
 .SH "EXIT STATUS"
 .TP 0.5i
 \fB0\fR
@@ -68,6 +95,12 @@ Write file error in mmap.
 .TP 0.5i
 \fB8\fR
 Invalid input/output filename.
+.TP 0.5i
+\fB9\fR
+Invalid commandline parameter.
+.TP 0.5i
+\fB10\fR
+Invalid decoding checksum.
 .SH "SEE ALSO"
 https://github.com/fumiama/base16384
 .SH BUGS
@@ -77,7 +110,7 @@ on github.
 .SH AUTHOR
 This manual page contributed by Fumiama Minamoto.
 .SH "COPYRIGHT"
-Copyright \(co 2022-2023, Fumiama Minamoto
+Copyright \(co 2022-2024, Fumiama Minamoto
 This file is part of
 .IR "base16384" .
 .LP
