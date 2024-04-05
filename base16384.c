@@ -52,6 +52,7 @@ static base16384_err_t print_usage() {
 	fputs("  -t\t\tshow spend time\n", stderr);
 	fputs("  -n\t\tdon't write utf16be file header (0xFEFF)\n", stderr);
 	fputs("  -c\t\tembed or validate checksum in remainder\n", stderr);
+	fputs("  -C\t\tdo -c forcely\n", stderr);
 	fputs("  inputfile\tpass - to read from stdin\n", stderr);
 	fputs("  outputfile\tpass - to write to stdout\n", stderr);
 	return base16384_err_invalid_commandline_parameter;
@@ -91,6 +92,9 @@ int main(int argc, char** argv) {
 		case 'c':
 			if(set_or_test_flag(use_checksum, 1)) return print_usage();
 		break;
+		case 'C':
+			if(set_or_test_flag(use_checksum, 2)) return print_usage();
+		break;
 		default:
 			return print_usage();
 		break;
@@ -111,7 +115,9 @@ int main(int argc, char** argv) {
 
 	#define do_coding(method) base16384_##method##_file_detailed( \
 		argv[2], argv[3], encbuf, decbuf, \
-		(no_header?BASE16384_FLAG_NOHEADER:0) | (use_checksum?BASE16384_FLAG_SUM_CHECK_ON_REMAIN:0) \
+		(no_header?BASE16384_FLAG_NOHEADER:0) \
+		| ((use_checksum&1)?BASE16384_FLAG_SUM_CHECK_ON_REMAIN:0) \
+		| ((use_checksum&2)?BASE16384_FLAG_DO_SUM_CHECK_FORCELY:0) \
 	)
 		exitstat = is_encode?do_coding(encode):do_coding(decode);
 	#undef do_coding

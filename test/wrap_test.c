@@ -74,7 +74,6 @@ int main() {
 
         validate_result();
     }
-    fputs("one test passed.\n", stderr);
 
     fputs("testing base16384_en/decode_fp...\n", stderr);
     init_input_file();
@@ -106,7 +105,6 @@ int main() {
 
         validate_result();
     }
-    fputs("one test passed.\n", stderr);
 
     fputs("testing base16384_en/decode_fd...\n", stderr);
     init_input_file();
@@ -133,7 +131,6 @@ int main() {
 
         validate_result();
     }
-    fputs("one test passed.\n", stderr);
 
     remove(TEST_INPUT_FILENAME);
     remove(TEST_OUTPUT_FILENAME);

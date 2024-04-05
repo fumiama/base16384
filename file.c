@@ -75,7 +75,7 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 	if(!fpo) {
 		return base16384_err_fopen_output_file;
 	}
-	if(inputsize >= _BASE16384_ENCBUFSZ) { // stdin or big file, use encbuf & fread
+	if(flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || inputsize >= _BASE16384_ENCBUFSZ) { // stdin or big file, use encbuf & fread
 		inputsize = _BASE16384_ENCBUFSZ;
 		#if defined _WIN32 || defined __cosmopolitan
 	}
@@ -273,7 +273,7 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 			last_encbuf_cnt = cnt;
 		}
 		if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
-			&& total_decoded_len >= _BASE16384_ENCBUFSZ
+			&& (flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || total_decoded_len >= _BASE16384_ENCBUFSZ)
 			&& last_decbuf_cnt > 2
 			&& decbuf[last_decbuf_cnt-2] == '='
 			&& check_sum(sum, *(uint32_t*)(&encbuf[last_encbuf_cnt]), offset)) {
@@ -350,7 +350,7 @@ base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* en
 		last_encbuf_cnt = cnt;
 	}
 	if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
-		&& total_decoded_len >= _BASE16384_ENCBUFSZ
+		&& (flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || total_decoded_len >= _BASE16384_ENCBUFSZ)
 		&& last_decbuf_cnt > 2
 		&& decbuf[last_decbuf_cnt-2] == '='
 		&& check_sum(sum, *(uint32_t*)(&encbuf[last_encbuf_cnt]), offset)) {
@@ -429,7 +429,7 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 		last_encbuf_cnt = n;
 	}
 	if(flag&BASE16384_FLAG_SUM_CHECK_ON_REMAIN
-		&& total_decoded_len >= _BASE16384_ENCBUFSZ
+		&& (flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || total_decoded_len >= _BASE16384_ENCBUFSZ)
 		&& last_decbuf_cnt > 2
 		&& decbuf[last_decbuf_cnt-2] == '='
 		&& check_sum(sum, *(uint32_t*)(&encbuf[last_encbuf_cnt]), offset)) {

@@ -56,6 +56,8 @@ typedef enum base16384_err_t base16384_err_t;
 #define BASE16384_FLAG_NOHEADER				(1<<0)
 // enable sum check when using stdin or inputsize > _BASE16384_ENCBUFSZ
 #define BASE16384_FLAG_SUM_CHECK_ON_REMAIN	(1<<1)
+// forcely do sumcheck without checking decoded data length
+#define BASE16384_FLAG_DO_SUM_CHECK_FORCELY	(1<<2)
 // initial sum value used in BASE16384_FLAG_SUM_CHECK_ON_REMAIN
 #define BASE16384_SIMPLE_SUM_INIT_VALUE		(0x8e29c213)
 

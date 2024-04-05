@@ -130,13 +130,23 @@ char tstbuf[BASE16384_ENCBUFSZ];
 
 #define test_detailed(name) \
     test_##name##_detailed(0); \
-    fputs("one test passed.\n", stderr); \
+\
     test_##name##_detailed(BASE16384_FLAG_NOHEADER); \
-    fputs("one test passed.\n", stderr); \
     test_##name##_detailed(BASE16384_FLAG_SUM_CHECK_ON_REMAIN); \
-    fputs("one test passed.\n", stderr); \
+    test_##name##_detailed(BASE16384_FLAG_DO_SUM_CHECK_FORCELY); \
+\
     test_##name##_detailed(BASE16384_FLAG_NOHEADER|BASE16384_FLAG_SUM_CHECK_ON_REMAIN); \
-    fputs("one test passed.\n", stderr);
+    test_##name##_detailed(BASE16384_FLAG_NOHEADER|BASE16384_FLAG_DO_SUM_CHECK_FORCELY); \
+\
+    test_##name##_detailed(BASE16384_FLAG_SUM_CHECK_ON_REMAIN|BASE16384_FLAG_DO_SUM_CHECK_FORCELY); \
+\
+    test_##name##_detailed(BASE16384_FLAG_NOHEADER|BASE16384_FLAG_SUM_CHECK_ON_REMAIN|BASE16384_FLAG_DO_SUM_CHECK_FORCELY);
+
+
+#define remove_test_files() \
+    remove(TEST_INPUT_FILENAME); \
+    remove(TEST_OUTPUT_FILENAME); \
+    remove(TEST_VALIDATE_FILENAME);
 
 int main() {
     srand(time(NULL));
@@ -149,9 +159,7 @@ int main() {
     test_detailed(fp);
     test_detailed(fd);
 
-    remove(TEST_INPUT_FILENAME);
-    remove(TEST_OUTPUT_FILENAME);
-    remove(TEST_VALIDATE_FILENAME);
+    remove_test_files();
 
     return 0;
 }
