@@ -5,10 +5,10 @@
 #include "bitio.h"
 
 #define HEAD 0x4E
-BIT outbuf;
-unsigned char buf[BUFSIZ/8*8+2];
+static BIT outbuf;
+static unsigned char buf[BUFSIZ/8*8+2];
 
-static void push(int istrue, FILE *fpo, int offset){
+static inline void push(int istrue, FILE *fpo, int offset){
     if(!~pushbit(&outbuf, istrue)){
         if(offset) for(int i = 0; i < BITBUFSIZE; i += 2) outbuf.b[i] += offset;
         fwrite(outbuf.b, sizeof(char), BITBUFSIZE, fpo);
@@ -70,30 +70,51 @@ static void decode(FILE *fp, FILE *fpo){
 }
 
 #define CHOICE argv[1][1]
-#define READ argv[2]
-#define WRITE argv[3]
+#define INPUT argv[2]
+#define OUTPUT argv[3]
+
+#define is_standard_io(filename) (*(uint16_t*)(filename) == *(uint16_t*)"-")
 
 int main(int argc, char **argv){
     FILE *fp = NULL;
     FILE *fpo = NULL;
     
     if(argc != 4){
-        fputs("Usage: -[e|d] inputfile outputfile\n", stderr);
-        fputs("       -e encode\n", stderr);
-        fputs("       -d decode\n", stderr);
+        fputs("base16384 [-ed] [inputfile] [outputfile]\n", stderr);
+        fputs("  -e\t\tencode (default)\n", stderr);
+        fputs("  -d\t\tdecode\n", stderr);
+        fputs("  inputfile\tpass - to read from stdin\n", stderr);
+        fputs("  outputfile\tpass - to write to stdout\n", stderr);
         exit(EXIT_FAILURE);
     }
 
-    fp = fopen(READ, "rb");
-    fpo = fopen(WRITE, "wb");
-    if(!fp || !fpo){
-        fputs("IO error!", stderr);
-        exit(EXIT_FAILURE);
+    if(is_standard_io(INPUT)) {
+        fp = stdin;
+    } else {
+        fp = fopen(INPUT, "rb");
+        if(!fp){
+            perror("fopen");
+            exit(EXIT_FAILURE);
+        }
     }
+    if(is_standard_io(OUTPUT)) {
+        fpo = stdout;
+    } else {
+            fpo = fopen(OUTPUT, "wb");
+        if(!fpo){
+            perror("fopen");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     switch(CHOICE){
         case 'e': encode(fp, fpo); break;
         case 'd': decode(fp, fpo); break;
         default: break;
     }
+
+    if(is_standard_io(INPUT)) fclose(fp);
+    if(is_standard_io(OUTPUT)) fclose(fpo);
+
     return 0;
 }
