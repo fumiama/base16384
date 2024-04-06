@@ -1,8 +1,14 @@
 #ifndef _BITIO_H_
 #define _BITIO_H_
-//bitio.h
-//made by fumiama
-//20200413
+
+/* bitio.h
+ * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
+ * Copyright (c) 2020-2024 Fumiama Minamoto.
+ *
+ * This program is distributed in MIT license.
+ * Initially created at 20200413.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #ifndef BITBUFSIZE

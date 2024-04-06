@@ -1,5 +1,11 @@
-//base16384.c
-//MIT fumiama 20200416
+/* base16384.c
+ * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
+ * Copyright (c) 2020-2024 Fumiama Minamoto.
+ *
+ * This program is distributed in MIT license.
+ * Initially created at 20200416.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "bitio.h"

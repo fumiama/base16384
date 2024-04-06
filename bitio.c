@@ -1,3 +1,11 @@
+/* bitio.c
+ * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
+ * Copyright (c) 2020-2024 Fumiama Minamoto.
+ *
+ * This program is distributed in MIT license.
+ * Initially created at 20200416.
+ */
+
 #include "bitio.h"
 
 int pushbit(BIT *buffer, const int isture){
