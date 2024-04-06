@@ -100,7 +100,8 @@ static ssize_t base16384_test_file_reader(const void *client_data, void *buffer,
     int fd = (int)((uintptr_t)client_data);
     ssize_t ret = read(fd, buffer, count);
     if(ret < 0) return ret;
-    for(ssize_t i = 0; i < ret; i++) {
+    ssize_t i;
+    for(i = 0; i < ret; i++) {
         ((uint8_t*)(buffer))[i] = ~((uint8_t*)(buffer))[i];
     }
     return ret;
@@ -114,7 +115,8 @@ static ssize_t base16384_test_file_writer(const void *client_data, const void *b
     }
     uint8_t* wbuf = (uint8_t*)malloc(count);
     if(!wbuf) return -200;
-    for(ssize_t i = 0; i < count; i++) {
+    ssize_t i;
+    for(i = 0; i < count; i++) {
         wbuf[i] = ~((uint8_t*)(buffer))[i];
     }
     ssize_t ret = write(fd, buffer, count);

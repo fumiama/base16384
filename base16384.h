@@ -78,7 +78,7 @@ typedef ssize_t(*base16384_reader_t)(const void *client_data, void *buffer, size
 typedef ssize_t(*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
 
 struct base16384_stream_t {
-	union {
+	const union {
 		base16384_reader_t reader;
 		base16384_writer_t writer;
 	} f;
