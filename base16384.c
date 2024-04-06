@@ -27,11 +27,11 @@
 #endif
 #include "base16384.h"
 
-char encbuf[BASE16384_ENCBUFSZ];
-char decbuf[BASE16384_DECBUFSZ];
+static char encbuf[BASE16384_ENCBUFSZ];
+static char decbuf[BASE16384_DECBUFSZ];
 
 #ifndef _WIN32
-unsigned long get_start_ms() {
+static unsigned long get_start_ms() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);

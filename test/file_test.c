@@ -39,19 +39,9 @@
 #define TEST_OUTPUT_FILENAME "file_test_output.bin"
 #define TEST_VALIDATE_FILENAME "file_test_validate.bin"
 
-char encbuf[BASE16384_ENCBUFSZ];
-char decbuf[BASE16384_DECBUFSZ];
-char tstbuf[BASE16384_ENCBUFSZ];
-
-#define init_input_file() \
-    for(i = 0; i < BASE16384_ENCBUFSZ; i += sizeof(int)) { \
-        *(int*)(&encbuf[i]) = rand(); \
-    } \
-    fp = fopen(TEST_INPUT_FILENAME, "wb"); \
-    ok(!fp, "fopen"); \
-    ok(fwrite(encbuf, BASE16384_ENCBUFSZ, 1, fp) != 1, "fwrite"); \
-    ok(fclose(fp), "fclose"); \
-    fputs("input file created.\n", stderr);
+static char encbuf[BASE16384_ENCBUFSZ];
+static char decbuf[BASE16384_DECBUFSZ];
+static char tstbuf[BASE16384_ENCBUFSZ];
 
 #define test_file_detailed(flag) \
     fputs("testing base16384_en/decode_file with flag "#flag"...\n", stderr); \

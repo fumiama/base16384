@@ -26,9 +26,9 @@
 
 #define TEST_SIZE (4096)
 
-char encbuf[TEST_SIZE+16];
-char decbuf[TEST_SIZE/7*8+16];
-char tstbuf[TEST_SIZE+16];
+static char encbuf[TEST_SIZE+16];
+static char decbuf[TEST_SIZE/7*8+16];
+static char tstbuf[TEST_SIZE+16];
 
 #define loop_diff(target) \
     for(i = start; i < end; i++) { \

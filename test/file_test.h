@@ -82,4 +82,14 @@
         return 1; \
     }
 
+#define init_input_file() \
+    for(i = 0; i < BASE16384_ENCBUFSZ; i += sizeof(int)) { \
+        *(int*)(&encbuf[i]) = rand(); \
+    } \
+    fp = fopen(TEST_INPUT_FILENAME, "wb"); \
+    ok(!fp, "fopen"); \
+    ok(fwrite(encbuf, BASE16384_ENCBUFSZ, 1, fp) != 1, "fwrite"); \
+    ok(fclose(fp), "fclose"); \
+    fputs("input file created.\n", stderr);
+
 #endif
