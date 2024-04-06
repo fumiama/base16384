@@ -119,8 +119,8 @@ int main(int argc, char **argv){
         default: break;
     }
 
-    if(is_standard_io(INPUT)) fclose(fp);
-    if(is_standard_io(OUTPUT)) fclose(fpo);
+    if(!is_standard_io(INPUT)) fclose(fp);
+    if(!is_standard_io(OUTPUT)) fclose(fpo);
 
     return 0;
 }
