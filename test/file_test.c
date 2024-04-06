@@ -100,7 +100,7 @@ static char tstbuf[BASE16384_ENCBUFSZ];
         int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND); \
         loop_ok(!fdout, i, "open"); \
  \
-        err = base16384_encode_fd_detailed(fd, fdout, encbuf, decbuf, 0); \
+        err = base16384_encode_fd_detailed(fd, fdout, encbuf, decbuf, flag); \
         base16384_loop_ok(err); \
         loop_ok(close(fd), i, "close"); \
  \
@@ -109,7 +109,46 @@ static char tstbuf[BASE16384_ENCBUFSZ];
  \
         loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek"); \
  \
-        err = base16384_decode_fd_detailed(fdout, fdval, encbuf, decbuf, 0); \
+        err = base16384_decode_fd_detailed(fdout, fdval, encbuf, decbuf, flag); \
+        base16384_loop_ok(err); \
+ \
+        loop_ok(close(fdout), i, "close"); \
+        loop_ok(close(fdval), i, "close"); \
+ \
+        validate_result(); \
+    }
+
+#define test_stream_detailed(flag) \
+    fputs("testing base16384_en/decode_stream with flag "#flag"...\n", stderr); \
+    init_input_file(); \
+    for(i = TEST_SIZE; i > 0; i--) { \
+        reset_and_truncate(fd, i); \
+ \
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND); \
+        loop_ok(!fdout, i, "open"); \
+ \
+        err = base16384_encode_stream_detailed(&(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fd, \
+            .f.reader = base16384_test_file_reader, \
+        }, &(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fdout, \
+            .f.writer = base16384_test_file_writer, \
+        }, encbuf, decbuf, flag); \
+        base16384_loop_ok(err); \
+        loop_ok(close(fd), i, "close"); \
+ \
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT); \
+        loop_ok(!fdval, i, "open"); \
+ \
+        loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek"); \
+ \
+        err = base16384_decode_stream_detailed(&(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fdout, \
+            .f.reader = base16384_test_file_reader, \
+        }, &(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fdval, \
+            .f.writer = base16384_test_file_writer, \
+        }, encbuf, decbuf, flag); \
         base16384_loop_ok(err); \
  \
         loop_ok(close(fdout), i, "close"); \
@@ -148,6 +187,7 @@ int main() {
     test_detailed(file);
     test_detailed(fp);
     test_detailed(fd);
+    test_detailed(stream);
 
     remove_test_files();
 

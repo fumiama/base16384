@@ -122,6 +122,44 @@ int main() {
         validate_result();
     }
 
+    fputs("testing base16384_en/decode_stream...\n", stderr);
+    init_input_file();
+    for(i = TEST_SIZE; i > 0; i--) {
+        reset_and_truncate(fd, i);
+
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND);
+        loop_ok(!fdout, i, "open");
+
+        err = base16384_encode_stream(&(base16384_stream_t){
+            .client_data = (void*)(uintptr_t)fd,
+            .f.reader = base16384_test_file_reader,
+        }, &(base16384_stream_t){
+            .client_data = (void*)(uintptr_t)fdout,
+            .f.writer = base16384_test_file_writer,
+        }, encbuf, decbuf);
+        base16384_loop_ok(err);
+        loop_ok(close(fd), i, "close");
+
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT);
+        loop_ok(!fdval, i, "open");
+
+        loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek");
+
+        err = base16384_decode_stream(&(base16384_stream_t){
+            .client_data = (void*)(uintptr_t)fdout,
+            .f.reader = base16384_test_file_reader,
+        }, &(base16384_stream_t){
+            .client_data = (void*)(uintptr_t)fdval,
+            .f.writer = base16384_test_file_writer,
+        }, encbuf, decbuf);
+        base16384_loop_ok(err);
+
+        loop_ok(close(fdout), i, "close");
+        loop_ok(close(fdval), i, "close");
+
+        validate_result();
+    }
+
     remove(TEST_INPUT_FILENAME);
     remove(TEST_OUTPUT_FILENAME);
     remove(TEST_VALIDATE_FILENAME);

@@ -60,6 +60,36 @@ typedef enum base16384_err_t base16384_err_t;
 #define BASE16384_FLAG_DO_SUM_CHECK_FORCELY	(1<<2)
 
 /**
+ * @brief custom reader function interface
+ * @param client_data the data pointer defined by the client
+ * @param buffer to where put data
+ * @param count read bytes count
+ * @return the size read
+*/
+typedef ssize_t(*base16384_reader_t)(const void *client_data, void *buffer, size_t count);
+
+/**
+ * @brief custom writer function interface
+ * @param client_data the data pointer defined by the client
+ * @param buffer from where read data
+ * @param count write bytes count
+ * @return the size written
+*/
+typedef ssize_t(*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
+
+struct base16384_stream_t {
+	union {
+		base16384_reader_t reader;
+		base16384_writer_t writer;
+	} f;
+	const void *client_data;
+};
+/**
+ * @brief for stream encode/decode
+*/
+typedef struct base16384_stream_t base16384_stream_t;
+
+/**
  * @brief calculate the exact encoded size
  * @param dlen the data length to encode
  * @return the size
@@ -211,6 +241,17 @@ base16384_err_t base16384_encode_fp_detailed(base16384_typed_flag_params(FILE*))
 base16384_err_t base16384_encode_fd_detailed(base16384_typed_flag_params(int));
 
 /**
+ * @brief encode custom input reader to custom output writer
+ * @param input custom input reader
+ * @param output custom output writer
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_encode_stream_detailed(base16384_typed_flag_params(base16384_stream_t*));
+
+/**
  * @brief decode input file to output file
  * @param input filename or `-` to specify stdin
  * @param output filename or `-` to specify stdout
@@ -243,16 +284,29 @@ base16384_err_t base16384_decode_fp_detailed(base16384_typed_flag_params(FILE*))
 */
 base16384_err_t base16384_decode_fd_detailed(base16384_typed_flag_params(int));
 
+/**
+ * @brief decode custom input reader to custom output writer
+ * @param input custom input reader
+ * @param output custom output writer
+ * @param encbuf must be no less than BASE16384_ENCBUFSZ
+ * @param decbuf must be no less than BASE16384_DECBUFSZ
+ * @param flag BASE16384_FLAG_xxx value, add multiple flags by `|`
+ * @return the error code
+*/
+base16384_err_t base16384_decode_stream_detailed(base16384_typed_flag_params(base16384_stream_t*));
+
 #define BASE16384_WRAP_DECL(method, name, type) \
 	base16384_err_t base16384_##method##_##name(base16384_typed_params(type));
 
 	BASE16384_WRAP_DECL(encode, file, const char*);
 	BASE16384_WRAP_DECL(encode, fp, FILE*);
 	BASE16384_WRAP_DECL(encode, fd, int);
+	BASE16384_WRAP_DECL(encode, stream, base16384_stream_t*);
 
 	BASE16384_WRAP_DECL(decode, file, const char*);
 	BASE16384_WRAP_DECL(decode, fp, FILE*);
 	BASE16384_WRAP_DECL(decode, fd, int);
+	BASE16384_WRAP_DECL(decode, stream, base16384_stream_t*);
 
 #undef BASE16384_WRAP_DECL
 

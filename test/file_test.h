@@ -92,4 +92,36 @@
     ok(fclose(fp), "fclose"); \
     fputs("input file created.\n", stderr);
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
+static ssize_t base16384_test_file_reader(const void *client_data, void *buffer, size_t count) {
+    int fd = (int)((uintptr_t)client_data);
+    ssize_t ret = read(fd, buffer, count);
+    if(ret < 0) return ret;
+    for(ssize_t i = 0; i < ret; i++) {
+        ((uint8_t*)(buffer))[i] = ~((uint8_t*)(buffer))[i];
+    }
+    return ret;
+}
+
+static ssize_t base16384_test_file_writer(const void *client_data, const void *buffer, size_t count) {
+    int fd = (int)((uintptr_t)client_data);
+    if(count <= 0) {
+        errno = EINVAL;
+        return -100;
+    }
+    uint8_t* wbuf = (uint8_t*)malloc(count);
+    if(!wbuf) return -200;
+    for(ssize_t i = 0; i < count; i++) {
+        wbuf[i] = ~((uint8_t*)(buffer))[i];
+    }
+    ssize_t ret = write(fd, buffer, count);
+    int errnobak = errno;
+    free(wbuf);
+    errno = errnobak;
+    return ret;
+}
+
 #endif

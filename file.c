@@ -57,14 +57,14 @@ static inline off_t get_file_size(const char* filepath) {
 #define do_sum_check(flag) ((flag)&(BASE16384_FLAG_DO_SUM_CHECK_FORCELY|BASE16384_FLAG_SUM_CHECK_ON_REMAIN))
 
 base16384_err_t base16384_encode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag) {
-	off_t inputsize;
-	FILE *fp = NULL, *fpo;
-	int errnobak = 0, is_stdin = is_standard_io(input);
-	base16384_err_t retval = base16384_err_ok;
 	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
 		errno = EINVAL;
 		return base16384_err_invalid_file_name;
 	}
+	base16384_err_t retval = base16384_err_ok;
+	off_t inputsize;
+	FILE *fp = NULL, *fpo;
+	int errnobak = 0, is_stdin = is_standard_io(input);
 	if(is_stdin) { // read from stdin
 		inputsize = _BASE16384_ENCBUFSZ;
 		fp = stdin;
@@ -213,6 +213,41 @@ base16384_err_t base16384_encode_fd_detailed(int input, int output, char* encbuf
 	return base16384_err_ok;
 }
 
+#define reader(cd, buf, n) (input->f.reader((cd)->client_data, (buf), (n)))
+#define writer(cd, buf, n) (output->f.writer((cd)->client_data, (buf), (n)))
+
+base16384_err_t base16384_encode_stream_detailed(base16384_stream_t* input, base16384_stream_t* output, char* encbuf, char* decbuf, int flag) {
+	if(!input || !input->f.reader) {
+		return base16384_err_fopen_input_file;
+	}
+	if(!output || !output->f.writer) {
+		return base16384_err_fopen_output_file;
+	}
+	off_t inputsize = _BASE16384_ENCBUFSZ;
+	size_t cnt = 0;
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	if(!(flag&BASE16384_FLAG_NOHEADER)) writer(output, "\xfe\xff", 2);
+	while((cnt = reader(input, encbuf, inputsize)) > 0) {
+		int n;
+		while(cnt%7) {
+			n = reader(input, encbuf+cnt, sizeof(char));
+			if(n > 0) cnt++;
+			else break;
+		}
+		if(do_sum_check(flag)) {
+			sum = calc_sum(sum, cnt, encbuf);
+			if(cnt%7) { // last encode
+				*(uint32_t*)(&encbuf[cnt]) = htobe32(sum);
+			}
+		}
+		n = base16384_encode_unsafe(encbuf, cnt, decbuf);
+		if(n && writer(output, decbuf, n) < n) {
+			return base16384_err_write_file;
+		}
+	}
+	return base16384_err_ok;
+}
+
 #define rm_head(fp) {\
 	int ch = fgetc(fp);\
 	if(ch == 0xFE) fgetc(fp);\
@@ -230,16 +265,16 @@ static inline int is_next_end(FILE* fp) {
 }
 
 base16384_err_t base16384_decode_file_detailed(const char* input, const char* output, char* encbuf, char* decbuf, int flag) {
+	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
+		errno = EINVAL;
+		return base16384_err_invalid_file_name;
+	}
 	off_t inputsize;
 	FILE* fp = NULL;
 	FILE* fpo;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	base16384_err_t retval = base16384_err_ok;
 	int errnobak = 0, is_stdin = is_standard_io(input);
-	if(!input || !output || strlen(input) <= 0 || strlen(output) <= 0) {
-		errno = EINVAL;
-		return base16384_err_invalid_file_name;
-	}
 	if(is_stdin) { // read from stdin
 		inputsize = _BASE16384_DECBUFSZ;
 		fp = stdin;
@@ -442,6 +477,85 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 		last_decbuf_cnt = n;
 		n = base16384_decode_unsafe(decbuf, n, encbuf);
 		if(n && write(output, encbuf, n) != n) {
+			return base16384_err_write_file;
+		}
+		total_decoded_len += n;
+		if(do_sum_check(flag)) sum = calc_sum(sum, n, encbuf);
+		last_encbuf_cnt = n;
+	}
+	if(do_sum_check(flag)
+		&& (flag&BASE16384_FLAG_DO_SUM_CHECK_FORCELY || total_decoded_len >= _BASE16384_ENCBUFSZ)
+		&& last_decbuf_cnt > 2
+		&& decbuf[last_decbuf_cnt-2] == '='
+		&& check_sum(sum, *(uint32_t*)(&encbuf[last_encbuf_cnt]), offset)) {
+		errno = EINVAL;
+		return base16384_err_invalid_decoding_checksum;
+	}
+	return base16384_err_ok;
+}
+
+static inline uint16_t is_next_end_stream(base16384_stream_t* input) {
+	uint8_t ch = 0;
+	if(reader(input, &ch, 1) != 1) return (uint16_t)EOF;
+	uint16_t ret = (uint16_t)ch & 0x00ff;
+	if(ch == '=') {
+		if(reader(input, &ch, 1) != 1) return (uint16_t)EOF;
+		ret <<= 8;
+		ret |= (uint16_t)ch & 0x00ff;
+	}
+	return ret;
+}
+
+base16384_err_t base16384_decode_stream_detailed(base16384_stream_t* input, base16384_stream_t* output, char* encbuf, char* decbuf, int flag) {
+	if(!input || !input->f.reader) {
+		errno = EINVAL;
+		return base16384_err_fopen_input_file;
+	}
+	if(!output || !output->f.writer) {
+		errno = EINVAL;
+		return base16384_err_fopen_output_file;
+	}
+
+	off_t inputsize = _BASE16384_DECBUFSZ;
+	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
+	uint8_t remains[8];
+
+	decbuf[0] = 0;
+	if(reader(input, remains, 2) != 2) {
+		return base16384_err_read_file;
+	}
+
+	int p = 0;
+	if(remains[0] != (uint8_t)(0xfe)) p = 2;
+
+	int n, last_encbuf_cnt = 0, last_decbuf_cnt = 0, offset = 0;
+	size_t total_decoded_len = 0;
+	while((n = reader(input, decbuf+p, inputsize-p)) > 0) {
+		if(p) {
+			memcpy(decbuf, remains, p);
+			n += p;
+			p = 0;
+		}
+		int x;
+		while(n%8) {
+			x = reader(input, decbuf+n, sizeof(char));
+			if(x > 0) n++;
+			else break;
+		}
+		uint16_t next = is_next_end_stream(input);
+		if(errno) {
+			return base16384_err_read_file;
+		}
+		if((uint16_t)(~next)) {
+			if(next&0xff00) {
+				decbuf[n++] = '=';
+				decbuf[n++] = (char)(next&0x00ff);
+			} else remains[p++] = (char)(next&0x00ff);
+		}
+		offset = decbuf[n-1];
+		last_decbuf_cnt = n;
+		n = base16384_decode_unsafe(decbuf, n, encbuf);
+		if(n && writer(output, encbuf, n) != n) {
 			return base16384_err_write_file;
 		}
 		total_decoded_len += n;
