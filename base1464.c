@@ -30,7 +30,7 @@ typedef union {
 int base16384_encode_safe(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
-	switch(offset) {	// 算上偏移标志字符占用的2字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -112,7 +112,7 @@ int base16384_encode_safe(const char* data, int dlen, char* buf) {
 int base16384_encode(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
-	switch(offset) {	// 算上偏移标志字符占用的2字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -127,7 +127,7 @@ int base16384_encode(const char* data, int dlen, char* buf) {
 	int64_t i = 0;
 	for(; i <= dlen - 7; i += 7) {
 		register uint64_t sum = 0;
-		register uint64_t shift = htobe64(*(uint64_t*)(data+i))>>2; // 这里有读取越界
+		register uint64_t shift = htobe64(*(uint64_t*)(data+i))>>2; // here comes a read overlap
 		sum |= shift & 0x3fff000000000000;
 		shift >>= 2;
 		sum |= shift & 0x00003fff00000000;
@@ -177,7 +177,7 @@ int base16384_encode(const char* data, int dlen, char* buf) {
 int base16384_encode_unsafe(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
-	switch(offset) {	// 算上偏移标志字符占用的2字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -192,7 +192,7 @@ int base16384_encode_unsafe(const char* data, int dlen, char* buf) {
 	int64_t i = 0;
 	for(; i < dlen; i += 7) {
 		register uint64_t sum = 0;
-		register uint64_t shift = htobe64(*(uint64_t*)(data+i))>>2; // 这里有读取越界
+		register uint64_t shift = htobe64(*(uint64_t*)(data+i))>>2; // here comes a read overlap
 		sum |= shift & 0x3fff000000000000;
 		shift >>= 2;
 		sum |= shift & 0x00003fff00000000;
@@ -215,7 +215,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 	int offset = 0;
 	if(data[dlen-2] == '=') {
 		offset = data[dlen-1];
-		switch(offset) {	// 算上偏移标志字符占用的2字节
+		switch(offset) {	// also count 0x3dxx
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:
@@ -292,7 +292,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 	int offset = 0;
 	if(data[dlen-2] == '=') {
 		offset = data[dlen-1];
-		switch(offset) {	// 算上偏移标志字符占用的2字节
+		switch(offset) {	// also count 0x3dxx
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:
@@ -322,7 +322,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 	}
 	if(*(uint8_t*)(&vals[n]) == '=') return outlen;
 	if(offset--) {
-		// 这里有读取越界
+		// here comes a read overlap
 		#ifdef WORDS_BIGENDIAN
 			register uint64_t sum = __builtin_bswap64(vals[n]) - 0x000000000000004e;
 		#else
@@ -356,7 +356,7 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 	int offset = 0;
 	if(data[dlen-2] == '=') {
 		offset = data[dlen-1];
-		switch(offset) {	// 算上偏移标志字符占用的2字节
+		switch(offset) {	// also count 0x3dxx
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:

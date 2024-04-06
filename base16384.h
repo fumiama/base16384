@@ -66,7 +66,7 @@ typedef enum base16384_err_t base16384_err_t;
  * @param count read bytes count
  * @return the size read
 */
-typedef ssize_t(*base16384_reader_t)(const void *client_data, void *buffer, size_t count);
+typedef ssize_t (*base16384_reader_t)(const void *client_data, void *buffer, size_t count);
 
 /**
  * @brief custom writer function interface
@@ -75,13 +75,16 @@ typedef ssize_t(*base16384_reader_t)(const void *client_data, void *buffer, size
  * @param count write bytes count
  * @return the size written
 */
-typedef ssize_t(*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
+typedef ssize_t (*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
+
+union base16384_io_function_t {
+	base16384_reader_t reader;
+	base16384_writer_t writer;
+};
+typedef union base16384_io_function_t base16384_io_function_t;
 
 struct base16384_stream_t {
-	const union {
-		base16384_reader_t reader;
-		base16384_writer_t writer;
-	} f;
+	const base16384_io_function_t f;
 	const void *client_data;
 };
 /**
@@ -97,7 +100,7 @@ typedef struct base16384_stream_t base16384_stream_t;
 static inline int _base16384_encode_len(int dlen) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
-	switch(offset) {	// 算上偏移标志字符占用的 2 字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -127,7 +130,7 @@ static inline int base16384_encode_len(int dlen) {
 */
 static inline int _base16384_decode_len(int dlen, int offset) {
 	int outlen = dlen;
-	switch(offset) {	// 算上偏移标志字符占用的 2 字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen -= 4; break;
 		case 2:
