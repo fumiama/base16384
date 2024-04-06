@@ -213,8 +213,8 @@ base16384_err_t base16384_encode_fd_detailed(int input, int output, char* encbuf
 	return base16384_err_ok;
 }
 
-#define reader(cd, buf, n) (input->f.reader((cd)->client_data, (buf), (n)))
-#define writer(cd, buf, n) (output->f.writer((cd)->client_data, (buf), (n)))
+#define call_reader(cd, buf, n) (input->f.reader((cd)->client_data, (buf), (n)))
+#define call_writer(cd, buf, n) (output->f.writer((cd)->client_data, (buf), (n)))
 
 base16384_err_t base16384_encode_stream_detailed(base16384_stream_t* input, base16384_stream_t* output, char* encbuf, char* decbuf, int flag) {
 	if(!input || !input->f.reader) {
@@ -226,11 +226,11 @@ base16384_err_t base16384_encode_stream_detailed(base16384_stream_t* input, base
 	off_t inputsize = _BASE16384_ENCBUFSZ;
 	size_t cnt = 0;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
-	if(!(flag&BASE16384_FLAG_NOHEADER)) writer(output, "\xfe\xff", 2);
-	while((cnt = reader(input, encbuf, inputsize)) > 0) {
+	if(!(flag&BASE16384_FLAG_NOHEADER)) call_writer(output, "\xfe\xff", 2);
+	while((cnt = call_reader(input, encbuf, inputsize)) > 0) {
 		int n;
 		while(cnt%7) {
-			n = reader(input, encbuf+cnt, sizeof(char));
+			n = call_reader(input, encbuf+cnt, sizeof(char));
 			if(n > 0) cnt++;
 			else break;
 		}
@@ -241,7 +241,7 @@ base16384_err_t base16384_encode_stream_detailed(base16384_stream_t* input, base
 			}
 		}
 		n = base16384_encode_unsafe(encbuf, cnt, decbuf);
-		if(n && writer(output, decbuf, n) < n) {
+		if(n && call_writer(output, decbuf, n) < n) {
 			return base16384_err_write_file;
 		}
 	}
@@ -496,10 +496,10 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 
 static inline uint16_t is_next_end_stream(base16384_stream_t* input) {
 	uint8_t ch = 0;
-	if(reader(input, &ch, 1) != 1) return (uint16_t)EOF;
+	if(call_reader(input, &ch, 1) != 1) return (uint16_t)EOF;
 	uint16_t ret = (uint16_t)ch & 0x00ff;
 	if(ch == '=') {
-		if(reader(input, &ch, 1) != 1) return (uint16_t)EOF;
+		if(call_reader(input, &ch, 1) != 1) return (uint16_t)EOF;
 		ret <<= 8;
 		ret |= (uint16_t)ch & 0x00ff;
 	}
@@ -521,7 +521,7 @@ base16384_err_t base16384_decode_stream_detailed(base16384_stream_t* input, base
 	uint8_t remains[8];
 
 	decbuf[0] = 0;
-	if(reader(input, remains, 2) != 2) {
+	if(call_reader(input, remains, 2) != 2) {
 		return base16384_err_read_file;
 	}
 
@@ -530,7 +530,7 @@ base16384_err_t base16384_decode_stream_detailed(base16384_stream_t* input, base
 
 	int n, last_encbuf_cnt = 0, last_decbuf_cnt = 0, offset = 0;
 	size_t total_decoded_len = 0;
-	while((n = reader(input, decbuf+p, inputsize-p)) > 0) {
+	while((n = call_reader(input, decbuf+p, inputsize-p)) > 0) {
 		if(p) {
 			memcpy(decbuf, remains, p);
 			n += p;
@@ -538,7 +538,7 @@ base16384_err_t base16384_decode_stream_detailed(base16384_stream_t* input, base
 		}
 		int x;
 		while(n%8) {
-			x = reader(input, decbuf+n, sizeof(char));
+			x = call_reader(input, decbuf+n, sizeof(char));
 			if(x > 0) n++;
 			else break;
 		}
@@ -555,7 +555,7 @@ base16384_err_t base16384_decode_stream_detailed(base16384_stream_t* input, base
 		offset = decbuf[n-1];
 		last_decbuf_cnt = n;
 		n = base16384_decode_unsafe(decbuf, n, encbuf);
-		if(n && writer(output, encbuf, n) != n) {
+		if(n && call_writer(output, encbuf, n) != n) {
 			return base16384_err_write_file;
 		}
 		total_decoded_len += n;
