@@ -106,7 +106,7 @@ int main(int argc, char **argv){
     if(is_standard_io(OUTPUT)) {
         fpo = stdout;
     } else {
-            fpo = fopen(OUTPUT, "wb");
+        fpo = fopen(OUTPUT, "wb");
         if(!fpo){
             perror("fopen");
             exit(EXIT_FAILURE);
