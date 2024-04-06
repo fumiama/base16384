@@ -5,7 +5,7 @@ endif (POLICY CMP0048)
 project(base16384 VERSION 2.3.0)
 
 add_definitions(-DBASE16384_VERSION="${PROJECT_VERSION}")
-add_definitions(-DBASE16384_VERSION_DATE="April 5th 2024")
+add_definitions(-DBASE16384_VERSION_DATE="April 6th 2024")
 
 message(STATUS "Testing endian...")
 include(TestBigEndian)
