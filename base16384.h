@@ -61,11 +61,18 @@ typedef enum base16384_err_t base16384_err_t;
 
 #ifdef _MSC_VER
 #include <BaseTsd.h>
-#ifndef ssize_t
-	#define SSIZE_T ssize_t;
-#endif
 #endif
 
+#ifdef _MSC_VER
+/**
+ * @brief custom reader function interface
+ * @param client_data the data pointer defined by the client
+ * @param buffer to where put data
+ * @param count read bytes count
+ * @return the size read
+*/
+typedef SSIZE_T (*base16384_reader_t)(const void *client_data, void *buffer, size_t count);
+#else
 /**
  * @brief custom reader function interface
  * @param client_data the data pointer defined by the client
@@ -74,7 +81,18 @@ typedef enum base16384_err_t base16384_err_t;
  * @return the size read
 */
 typedef ssize_t (*base16384_reader_t)(const void *client_data, void *buffer, size_t count);
+#endif
 
+#ifdef _MSC_VER
+/**
+ * @brief custom writer function interface
+ * @param client_data the data pointer defined by the client
+ * @param buffer from where read data
+ * @param count write bytes count
+ * @return the size written
+*/
+typedef SSIZE_T (*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
+#else
 /**
  * @brief custom writer function interface
  * @param client_data the data pointer defined by the client
@@ -83,11 +101,6 @@ typedef ssize_t (*base16384_reader_t)(const void *client_data, void *buffer, siz
  * @return the size written
 */
 typedef ssize_t (*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
-
-#ifdef _MSC_VER
-#ifdef ssize_t
-	#undef ssize_t
-#endif
 #endif
 
 union base16384_io_function_t {
