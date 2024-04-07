@@ -84,8 +84,8 @@ union base16384_io_function_t {
 typedef union base16384_io_function_t base16384_io_function_t;
 
 struct base16384_stream_t {
-	const base16384_io_function_t f;
-	const void *client_data;
+	base16384_io_function_t f;
+	void *client_data;
 };
 /**
  * @brief for stream encode/decode

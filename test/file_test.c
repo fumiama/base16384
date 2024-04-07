@@ -97,14 +97,14 @@ static char tstbuf[BASE16384_ENCBUFSZ];
     for(i = TEST_SIZE; i > 0; i--) { \
         reset_and_truncate(fd, i); \
  \
-        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND); \
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND, 0644); \
         loop_ok(!fdout, i, "open"); \
  \
         err = base16384_encode_fd_detailed(fd, fdout, encbuf, decbuf, flag); \
         base16384_loop_ok(err); \
         loop_ok(close(fd), i, "close"); \
  \
-        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT); \
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT, 0644); \
         loop_ok(!fdval, i, "open"); \
  \
         loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek"); \
@@ -124,7 +124,7 @@ static char tstbuf[BASE16384_ENCBUFSZ];
     for(i = TEST_SIZE; i > 0; i--) { \
         reset_and_truncate(fd, i); \
  \
-        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND); \
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND, 0644); \
         loop_ok(!fdout, i, "open"); \
  \
         err = base16384_encode_stream_detailed(&(base16384_stream_t){ \
@@ -137,7 +137,7 @@ static char tstbuf[BASE16384_ENCBUFSZ];
         base16384_loop_ok(err); \
         loop_ok(close(fd), i, "close"); \
  \
-        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT); \
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT, 0644); \
         loop_ok(!fdval, i, "open"); \
  \
         loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek"); \
@@ -171,18 +171,14 @@ static char tstbuf[BASE16384_ENCBUFSZ];
 \
     test_##name##_detailed(BASE16384_FLAG_NOHEADER|BASE16384_FLAG_SUM_CHECK_ON_REMAIN|BASE16384_FLAG_DO_SUM_CHECK_FORCELY);
 
-
-#define remove_test_files() \
-    remove(TEST_INPUT_FILENAME); \
-    remove(TEST_OUTPUT_FILENAME); \
-    remove(TEST_VALIDATE_FILENAME);
-
 int main() {
     srand(time(NULL));
 
     FILE* fp;
     int fd, i;
     base16384_err_t err;
+
+    init_test_files();
 
     test_detailed(file);
     test_detailed(fp);

@@ -248,10 +248,10 @@ base16384_err_t base16384_encode_stream_detailed(base16384_stream_t* input, base
 	return base16384_err_ok;
 }
 
-#define rm_head(fp) {\
-	int ch = fgetc(fp);\
-	if(ch == 0xFE) fgetc(fp);\
-	else ungetc(ch, fp);\
+static inline void rm_head(FILE* fp) {
+	int ch = fgetc(fp);
+	if(ch == 0xFE) fgetc(fp);
+	else ungetc(ch, fp);
 }
 
 #define skip_offset(input_file) ((input_file[0]==(char)0xFE)?2:0)
@@ -299,9 +299,11 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_fopen_input_file, {});
 		}
 		rm_head(fp);
+		#ifndef _WIN32 // windows is crazy and always throws EINVAL
 		if(errno) {
 			goto_base16384_file_detailed_cleanup(decode, base16384_err_read_file, {});
 		}
+		#endif
 		int cnt, last_encbuf_cnt = 0, last_decbuf_cnt = 0, offset = 0;
 		size_t total_decoded_len = 0;
 		while((cnt = fread(decbuf, sizeof(char), inputsize, fp)) > 0) {
@@ -316,7 +318,9 @@ base16384_err_t base16384_decode_file_detailed(const char* input, const char* ou
 				decbuf[cnt++] = '=';
 				decbuf[cnt++] = end;
 			}
+			#ifndef _WIN32 // windows is crazy and always throws EINVAL
 			if(errno) goto_base16384_file_detailed_cleanup(decode, base16384_err_read_file, {});
+			#endif
 			offset = decbuf[cnt-1];
 			last_decbuf_cnt = cnt;
 			cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
@@ -376,9 +380,11 @@ base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* en
 	off_t inputsize = _BASE16384_DECBUFSZ;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	rm_head(input);
+	#ifndef _WIN32 // windows is crazy and always throws EINVAL
 	if(errno) {
 		return base16384_err_read_file;
 	}
+	#endif
 	int cnt, last_encbuf_cnt = 0, last_decbuf_cnt = 0, offset = 0;
 	size_t total_decoded_len = 0;
 	while((cnt = fread(decbuf, sizeof(char), inputsize, input)) > 0) {
@@ -393,7 +399,9 @@ base16384_err_t base16384_decode_fp_detailed(FILE* input, FILE* output, char* en
 			decbuf[cnt++] = '=';
 			decbuf[cnt++] = end;
 		}
+		#ifndef _WIN32 // windows is crazy and always throws EINVAL
 		if(errno) return base16384_err_read_file;
+		#endif
 		offset = decbuf[cnt-1];
 		last_decbuf_cnt = cnt;
 		cnt = base16384_decode_unsafe(decbuf, cnt, encbuf);
@@ -464,9 +472,11 @@ base16384_err_t base16384_decode_fd_detailed(int input, int output, char* encbuf
 			else break;
 		}
 		uint16_t next = is_next_end_fd(input);
+		#ifndef _WIN32 // windows is crazy and always throws EINVAL
 		if(errno) {
 			return base16384_err_read_file;
 		}
+		#endif
 		if((uint16_t)(~next)) {
 			if(next&0xff00) {
 				decbuf[n++] = '=';
@@ -543,9 +553,11 @@ base16384_err_t base16384_decode_stream_detailed(base16384_stream_t* input, base
 			else break;
 		}
 		uint16_t next = is_next_end_stream(input);
+		#ifndef _WIN32 // windows is crazy and always throws EINVAL
 		if(errno) {
 			return base16384_err_read_file;
 		}
+		#endif
 		if((uint16_t)(~next)) {
 			if(next&0xff00) {
 				decbuf[n++] = '=';

@@ -50,6 +50,8 @@ int main() {
     int fd, i;
     base16384_err_t err;
 
+    init_test_files();
+
     fputs("testing base16384_en/decode_file...\n", stderr);
     init_input_file();
     for(i = TEST_SIZE; i > 0; i--) {
@@ -101,14 +103,14 @@ int main() {
     for(i = TEST_SIZE; i > 0; i--) {
         reset_and_truncate(fd, i);
 
-        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND);
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND, 0644);
         loop_ok(!fdout, i, "open");
 
         err = base16384_encode_fd(fd, fdout, encbuf, decbuf);
         base16384_loop_ok(err);
         loop_ok(close(fd), i, "close");
 
-        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT);
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT, 0644);
         loop_ok(!fdval, i, "open");
 
         loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek");
@@ -127,7 +129,7 @@ int main() {
     for(i = TEST_SIZE; i > 0; i--) {
         reset_and_truncate(fd, i);
 
-        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND);
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND, 0644);
         loop_ok(!fdout, i, "open");
 
         err = base16384_encode_stream(&(base16384_stream_t){
@@ -140,7 +142,7 @@ int main() {
         base16384_loop_ok(err);
         loop_ok(close(fd), i, "close");
 
-        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT);
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT, 0644);
         loop_ok(!fdval, i, "open");
 
         loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek");
@@ -160,9 +162,7 @@ int main() {
         validate_result();
     }
 
-    remove(TEST_INPUT_FILENAME);
-    remove(TEST_OUTPUT_FILENAME);
-    remove(TEST_VALIDATE_FILENAME);
+    remove_test_files();
 
     return 0;
 }

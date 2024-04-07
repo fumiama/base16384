@@ -19,6 +19,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
+
 #define ok(has_failed, reason) \
     if (has_failed) { \
         perror(reason); \
@@ -83,14 +85,32 @@
     }
 
 #define init_input_file() \
-    for(i = 0; i < BASE16384_ENCBUFSZ; i += sizeof(int)) { \
-        *(int*)(&encbuf[i]) = rand(); \
+    fprintf(stderr, "fill encbufsz: %d\n", BASE16384_ENCBUFSZ);\
+    for(i = 0; i < BASE16384_ENCBUFSZ/sizeof(uint16_t); i++) { \
+        ((uint16_t*)encbuf)[i] = (uint16_t)rand(); \
     } \
     fp = fopen(TEST_INPUT_FILENAME, "wb"); \
     ok(!fp, "fopen"); \
     ok(fwrite(encbuf, BASE16384_ENCBUFSZ, 1, fp) != 1, "fwrite"); \
     ok(fclose(fp), "fclose"); \
     fputs("input file created.\n", stderr);
+
+#define init_test_files() {\
+    fd = open(TEST_INPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT, 0644); \
+    ok(fd<0, "open"); \
+    ok(close(fd), "close"); \
+    fd = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT, 0644); \
+    ok(fd<0, "open"); \
+    ok(close(fd), "close"); \
+    fd = open(TEST_VALIDATE_FILENAME, O_RDWR|O_TRUNC|O_CREAT, 0644); \
+    ok(fd<0, "open"); \
+    ok(close(fd), "close");
+
+#define remove_test_files() \
+    remove(TEST_INPUT_FILENAME); \
+    remove(TEST_OUTPUT_FILENAME); \
+    remove(TEST_VALIDATE_FILENAME); \
+}
 
 #include <stdio.h>
 #include <stdlib.h>
