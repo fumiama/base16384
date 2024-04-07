@@ -23,6 +23,12 @@
 #include <stdint.h>
 #include <stdio.h>
 #endif
+#ifdef _MSC_VER
+#include <BaseTsd.h>
+#ifndef ssize_t
+typedef SSIZE_T ssize_t;
+#endif
+#endif
 
 enum base16384_err_t {
 	base16384_err_ok,
@@ -59,20 +65,6 @@ typedef enum base16384_err_t base16384_err_t;
 // forcely do sumcheck without checking data length
 #define BASE16384_FLAG_DO_SUM_CHECK_FORCELY	(1<<2)
 
-#ifdef _MSC_VER
-#include <BaseTsd.h>
-#endif
-
-#ifdef _MSC_VER
-/**
- * @brief custom reader function interface
- * @param client_data the data pointer defined by the client
- * @param buffer to where put data
- * @param count read bytes count
- * @return the size read
-*/
-typedef SSIZE_T (*base16384_reader_t)(const void *client_data, void *buffer, size_t count);
-#else
 /**
  * @brief custom reader function interface
  * @param client_data the data pointer defined by the client
@@ -81,18 +73,7 @@ typedef SSIZE_T (*base16384_reader_t)(const void *client_data, void *buffer, siz
  * @return the size read
 */
 typedef ssize_t (*base16384_reader_t)(const void *client_data, void *buffer, size_t count);
-#endif
 
-#ifdef _MSC_VER
-/**
- * @brief custom writer function interface
- * @param client_data the data pointer defined by the client
- * @param buffer from where read data
- * @param count write bytes count
- * @return the size written
-*/
-typedef SSIZE_T (*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
-#else
 /**
  * @brief custom writer function interface
  * @param client_data the data pointer defined by the client
@@ -101,7 +82,6 @@ typedef SSIZE_T (*base16384_writer_t)(const void *client_data, const void *buffe
  * @return the size written
 */
 typedef ssize_t (*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
-#endif
 
 union base16384_io_function_t {
 	base16384_reader_t reader;
