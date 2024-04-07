@@ -17,6 +17,9 @@ libbase16384.so.2 libbase16384-2 #MINVER#
  base16384_encode_fd@Base 2
  base16384_decode_fd@Base 2
 
+ base16384_encode_stream@Base 2.3.1
+ base16384_decode_stream@Base 2.3.1
+
  base16384_encode_file_detailed@Base 2.3
  base16384_decode_file_detailed@Base 2.3
 
@@ -25,3 +28,6 @@ libbase16384.so.2 libbase16384-2 #MINVER#
 
  base16384_encode_fd_detailed@Base 2.3
  base16384_decode_fd_detailed@Base 2.3
+
+ base16384_encode_stream_detailed@Base 2.3.1
+ base16384_decode_stream_detailed@Base 2.3.1
