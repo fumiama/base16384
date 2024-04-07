@@ -2,8 +2,8 @@ name: test
 on: [ push, pull_request, workflow_dispatch ]
 
 jobs:
-  test:
-    name: Run CMake Test 🧪
+  test_ubuntu:
+    name: Run CMake Test on Ubuntu (gcc) 🧪
     runs-on: ubuntu-latest
     steps:
 
@@ -31,17 +31,26 @@ jobs:
           cmake -DBUILD=test -DFORCE_32BIT=1 ..
           make
           make test || ctest --rerun-failed --output-on-failure
-  test_msvc:
-    name: Run CMake Test on Windows (MSVC) 🧪
+
+  test_windows:
+    name: Run CMake MSVC Test 🧪
     runs-on: windows-latest
     steps:
 
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build and Run 64bit Tests
         run: |
-          mkdir build && cd ./build
+          mkdir build && cd build
           cmake .. -DBUILD=test -G "Visual Studio 17 2022" -A x64
           cmake --build  .
-          ctest --rerun-failed --output-on-failure
+          ctest || ctest --rerun-failed --output-on-failure
+
+      - name: Build and Run 32bit Tests
+        run: |
+          Remove-Item -Path build -Force
+          mkdir build && cd build
+          cmake .. -DBUILD=test -DFORCE_32BIT=1 -G "Visual Studio 17 2022" -A x86
+          cmake --build  .
+          ctest || ctest --rerun-failed --output-on-failure
