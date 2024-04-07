@@ -1,5 +1,5 @@
 name: test
-on: [ push, pull_request ]
+on: [ push, pull_request, workflow_dispatch ]
 
 jobs:
   test:
@@ -42,5 +42,6 @@ jobs:
       - name: Build and Run 64bit Tests
         run: |
           mkdir build && cd ./build
-          cmake -DBUILD=test ..
+          cmake .. -DBUILD=test -G "Visual Studio 17 2022" -A x64
           cmake --build  .
+          ./ctest --rerun-failed --output-on-failure
