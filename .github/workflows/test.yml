@@ -1,9 +1,9 @@
 name: test
-on: [ push, pull_request, workflow_dispatch ]
+on: [ push, pull_request ]
 
 jobs:
   test_ubuntu:
-    name: Run CMake Test on Ubuntu (gcc) 🧪
+    name: Run CMake Test on Ubuntu (GCC) 🧪
     runs-on: ubuntu-latest
     steps:
 
@@ -33,7 +33,7 @@ jobs:
           make test || ctest --rerun-failed --output-on-failure
 
   test_windows:
-    name: Run CMake MSVC Test 🧪
+    name: Run CMake Test on Windows (MSVC) 🧪
     runs-on: windows-latest
     steps:
 
