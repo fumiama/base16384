@@ -43,16 +43,15 @@ jobs:
       - name: Build and Run 64bit Tests
         run: |
           cmake -E make_directory build
+          cmake -S . -B build -GNinja "-DBUILD=test" "-DCMAKE_BUILD_TYPE:STRING=Release"
+          cmake --build build --target all --
           cd build
-          cmake -DBUILD=test -G "Visual Studio 17 2022" -A x64 ..
-          cmake --build . --config Release --target all --
-          ctest -C Release -T test || ctest -C Release -T test --rerun-failed --output-on-failure
+          ctest -T test || ctest -T test --rerun-failed --output-on-failure
 
       - name: Build and Run 32bit Tests
         run: |
           Remove-Item -Path build -Force
           cmake -E make_directory build
-          cd build
-          cmake -DBUILD=test -DFORCE_32BIT=1 -G "Visual Studio 17 2022" -A x86 ..
-          cmake --build . --config Release --target all --
-          ctest -C Release -T test || ctest -C Release -T test --rerun-failed --output-on-failure
+          cmake -S . -B build -GNinja "-DBUILD=test" "-DFORCE_32BIT=1" "-DCMAKE_BUILD_TYPE:STRING=Release"
+          cmake --build build --target all --
+          ctest -T test || ctest -T test --rerun-failed --output-on-failure
