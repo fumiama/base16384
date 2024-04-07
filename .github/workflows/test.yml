@@ -32,16 +32,16 @@ jobs:
           make
           make test || ctest --rerun-failed --output-on-failure
   test_msvc:
-    name: Run CMake MSVC Test 🧪
+    name: Run CMake Test on Windows (MSVC) 🧪
     runs-on: windows-latest
     steps:
 
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Build and Run 64bit Tests
         run: |
           mkdir build && cd ./build
           cmake .. -DBUILD=test -G "Visual Studio 17 2022" -A x64
           cmake --build  .
-          .\test\Debug\wrap_test.exe --rerun-failed --output-on-failure
+          ctest --rerun-failed --output-on-failure
