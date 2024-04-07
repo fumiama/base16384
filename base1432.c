@@ -30,7 +30,7 @@ typedef union {
 int base16384_encode_safe(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
-	switch(offset) {	// 算上偏移标志字符占用的2字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -127,7 +127,7 @@ int base16384_encode_safe(const char* data, int dlen, char* buf) {
 int base16384_encode(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
-	switch(offset) {	// 算上偏移标志字符占用的2字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -202,7 +202,7 @@ int base16384_encode(const char* data, int dlen, char* buf) {
 int base16384_encode_unsafe(const char* data, int dlen, char* buf) {
 	int outlen = dlen / 7 * 8;
 	int offset = dlen % 7;
-	switch(offset) {	// 算上偏移标志字符占用的2字节
+	switch(offset) {	// also count 0x3dxx
 		case 0: break;
 		case 1: outlen += 4; break;
 		case 2:
@@ -244,7 +244,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 	int offset = 0;
 	if(data[dlen-2] == '=') {
 		offset = data[dlen-1];
-		switch(offset) {	// 算上偏移标志字符占用的2字节
+		switch(offset) {	// also count 0x3dxx
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:
@@ -259,7 +259,7 @@ int base16384_decode_safe(const char* data, int dlen, char* buf) {
 	const uint32_t* vals = (const uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
-	for(; i < outlen - 7; i+=7) {	// n实际每次自增2
+	for(; i < outlen - 7; i+=7) {	// n += 2 in one loop
 		register uint32_t sum = 0;
 		register uint32_t shift = htobe32(vals[n++]) - 0x4e004e00;
 		shift <<= 2;
@@ -341,7 +341,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 	int offset = 0;
 	if(data[dlen-2] == '=') {
 		offset = data[dlen-1];
-		switch(offset) {	// 算上偏移标志字符占用的2字节
+		switch(offset) {	// also count 0x3dxx
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:
@@ -356,7 +356,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 	const uint32_t* vals = (const uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
-	for(; i <= outlen - 7; i+=7) {	// n实际每次自增2
+	for(; i <= outlen - 7; i+=7) {	// n += 2 in one loop
 		register uint32_t sum = 0;
 		register uint32_t shift = htobe32(vals[n++]) - 0x4e004e00;
 		shift <<= 2;
@@ -375,7 +375,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 	}
 	if(*(uint8_t*)(&vals[n]) == '=') return outlen;
 	if(offset--) {
-		// 这里有读取越界
+		// here comes a read overlap
 		#ifdef WORDS_BIGENDIAN
 			register uint32_t sum = __builtin_bswap32(vals[n++]);
 		#else
@@ -391,7 +391,7 @@ int base16384_decode(const char* data, int dlen, char* buf) {
 				if(offset--) {
 					buf[i] = (sum & 0x0f000000) >> 20;
 					if(*(uint8_t*)(&vals[n]) == '=') return outlen;
-					// 这里有读取越界
+					// here comes a read overlap
 					#ifdef WORDS_BIGENDIAN
 						sum = __builtin_bswap32(vals[n]);
 					#else
@@ -418,7 +418,7 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 	int offset = 0;
 	if(data[dlen-2] == '=') {
 		offset = data[dlen-1];
-		switch(offset) {	// 算上偏移标志字符占用的2字节
+		switch(offset) {	// also count 0x3dxx
 			case 0: break;
 			case 1: outlen -= 4; break;
 			case 2:
@@ -433,7 +433,7 @@ int base16384_decode_unsafe(const char* data, int dlen, char* buf) {
 	const uint32_t* vals = (const uint32_t*)data;
 	uint32_t n = 0;
 	int32_t i = 0;
-	for(; i < outlen-7; i+=7) {	// n实际每次自增2
+	for(; i < outlen-7; i+=7) {	// n += 2 in one loop
 		register uint32_t sum = 0;
 		register uint32_t shift = htobe32(vals[n++]) - 0x4e004e00;
 		shift <<= 2;

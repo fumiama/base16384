@@ -19,6 +19,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef _MSC_VER
+#ifndef _CRT_SECURE_NO_WARNINGS
+	#define _CRT_SECURE_NO_WARNINGS
+#endif
+#endif
+
+#include <stdint.h>
+
 #define ok(has_failed, reason) \
     if (has_failed) { \
         perror(reason); \
@@ -81,5 +89,67 @@
         fputs(TEST_INPUT_FILENAME " and " TEST_VALIDATE_FILENAME " mismatch.", stderr); \
         return 1; \
     }
+
+#define init_input_file() \
+    fprintf(stderr, "fill encbufsz: %d\n", BASE16384_ENCBUFSZ);\
+    for(i = 0; i < BASE16384_ENCBUFSZ/sizeof(uint16_t); i++) { \
+        ((uint16_t*)encbuf)[i] = (uint16_t)rand(); \
+    } \
+    fp = fopen(TEST_INPUT_FILENAME, "wb"); \
+    ok(!fp, "fopen"); \
+    ok(fwrite(encbuf, BASE16384_ENCBUFSZ, 1, fp) != 1, "fwrite"); \
+    ok(fclose(fp), "fclose"); \
+    fputs("input file created.\n", stderr);
+
+#define init_test_files() {\
+    fd = open(TEST_INPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT, 0644); \
+    ok(fd<0, "open"); \
+    ok(close(fd), "close"); \
+    fd = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT, 0644); \
+    ok(fd<0, "open"); \
+    ok(close(fd), "close"); \
+    fd = open(TEST_VALIDATE_FILENAME, O_RDWR|O_TRUNC|O_CREAT, 0644); \
+    ok(fd<0, "open"); \
+    ok(close(fd), "close");
+
+#define remove_test_files() \
+    remove(TEST_INPUT_FILENAME); \
+    remove(TEST_OUTPUT_FILENAME); \
+    remove(TEST_VALIDATE_FILENAME); \
+}
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
+static ssize_t base16384_test_file_reader(const void *client_data, void *buffer, size_t count) {
+    int fd = (int)((uintptr_t)client_data);
+    ssize_t ret = read(fd, buffer, count);
+    if(ret < 0) return ret;
+    ssize_t i;
+    for(i = 0; i < ret; i++) {
+        ((uint8_t*)(buffer))[i] = ~((uint8_t*)(buffer))[i];
+    }
+    return ret;
+}
+
+static ssize_t base16384_test_file_writer(const void *client_data, const void *buffer, size_t count) {
+    int fd = (int)((uintptr_t)client_data);
+    if(count <= 0) {
+        errno = EINVAL;
+        return -100;
+    }
+    uint8_t* wbuf = (uint8_t*)malloc(count);
+    if(!wbuf) return -200;
+    ssize_t i;
+    for(i = 0; i < count; i++) {
+        wbuf[i] = ~((uint8_t*)(buffer))[i];
+    }
+    ssize_t ret = write(fd, buffer, count);
+    int errnobak = errno;
+    free(wbuf);
+    errno = errnobak;
+    return ret;
+}
 
 #endif

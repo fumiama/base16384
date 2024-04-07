@@ -39,19 +39,9 @@
 #define TEST_OUTPUT_FILENAME "file_test_output.bin"
 #define TEST_VALIDATE_FILENAME "file_test_validate.bin"
 
-char encbuf[BASE16384_ENCBUFSZ];
-char decbuf[BASE16384_DECBUFSZ];
-char tstbuf[BASE16384_ENCBUFSZ];
-
-#define init_input_file() \
-    for(i = 0; i < BASE16384_ENCBUFSZ; i += sizeof(int)) { \
-        *(int*)(&encbuf[i]) = rand(); \
-    } \
-    fp = fopen(TEST_INPUT_FILENAME, "wb"); \
-    ok(!fp, "fopen"); \
-    ok(fwrite(encbuf, BASE16384_ENCBUFSZ, 1, fp) != 1, "fwrite"); \
-    ok(fclose(fp), "fclose"); \
-    fputs("input file created.\n", stderr);
+static char encbuf[BASE16384_ENCBUFSZ];
+static char decbuf[BASE16384_DECBUFSZ];
+static char tstbuf[BASE16384_ENCBUFSZ];
 
 #define test_file_detailed(flag) \
     fputs("testing base16384_en/decode_file with flag "#flag"...\n", stderr); \
@@ -107,19 +97,58 @@ char tstbuf[BASE16384_ENCBUFSZ];
     for(i = TEST_SIZE; i > 0; i--) { \
         reset_and_truncate(fd, i); \
  \
-        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND); \
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND, 0644); \
         loop_ok(!fdout, i, "open"); \
  \
-        err = base16384_encode_fd_detailed(fd, fdout, encbuf, decbuf, 0); \
+        err = base16384_encode_fd_detailed(fd, fdout, encbuf, decbuf, flag); \
         base16384_loop_ok(err); \
         loop_ok(close(fd), i, "close"); \
  \
-        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT); \
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT, 0644); \
         loop_ok(!fdval, i, "open"); \
  \
         loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek"); \
  \
-        err = base16384_decode_fd_detailed(fdout, fdval, encbuf, decbuf, 0); \
+        err = base16384_decode_fd_detailed(fdout, fdval, encbuf, decbuf, flag); \
+        base16384_loop_ok(err); \
+ \
+        loop_ok(close(fdout), i, "close"); \
+        loop_ok(close(fdval), i, "close"); \
+ \
+        validate_result(); \
+    }
+
+#define test_stream_detailed(flag) \
+    fputs("testing base16384_en/decode_stream with flag "#flag"...\n", stderr); \
+    init_input_file(); \
+    for(i = TEST_SIZE; i > 0; i--) { \
+        reset_and_truncate(fd, i); \
+ \
+        int fdout = open(TEST_OUTPUT_FILENAME, O_RDWR|O_TRUNC|O_CREAT|O_APPEND, 0644); \
+        loop_ok(!fdout, i, "open"); \
+ \
+        err = base16384_encode_stream_detailed(&(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fd, \
+            .f.reader = base16384_test_file_reader, \
+        }, &(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fdout, \
+            .f.writer = base16384_test_file_writer, \
+        }, encbuf, decbuf, flag); \
+        base16384_loop_ok(err); \
+        loop_ok(close(fd), i, "close"); \
+ \
+        int fdval = open(TEST_VALIDATE_FILENAME, O_WRONLY|O_TRUNC|O_CREAT, 0644); \
+        loop_ok(!fdval, i, "open"); \
+ \
+        loop_ok(lseek(fdout, 0, SEEK_SET), i, "lseek"); \
+ \
+        err = base16384_decode_stream_detailed(&(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fdout, \
+            .f.reader = base16384_test_file_reader, \
+        }, &(base16384_stream_t){ \
+            .client_data = (void*)(uintptr_t)fdval, \
+            .f.writer = base16384_test_file_writer, \
+        }, encbuf, decbuf, flag); \
         base16384_loop_ok(err); \
  \
         loop_ok(close(fdout), i, "close"); \
@@ -142,12 +171,6 @@ char tstbuf[BASE16384_ENCBUFSZ];
 \
     test_##name##_detailed(BASE16384_FLAG_NOHEADER|BASE16384_FLAG_SUM_CHECK_ON_REMAIN|BASE16384_FLAG_DO_SUM_CHECK_FORCELY);
 
-
-#define remove_test_files() \
-    remove(TEST_INPUT_FILENAME); \
-    remove(TEST_OUTPUT_FILENAME); \
-    remove(TEST_VALIDATE_FILENAME);
-
 int main() {
     srand(time(NULL));
 
@@ -155,9 +178,12 @@ int main() {
     int fd, i;
     base16384_err_t err;
 
+    init_test_files();
+
     test_detailed(file);
     test_detailed(fp);
     test_detailed(fd);
+    test_detailed(stream);
 
     remove_test_files();
 

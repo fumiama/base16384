@@ -27,11 +27,11 @@
 #endif
 #include "base16384.h"
 
-char encbuf[BASE16384_ENCBUFSZ];
-char decbuf[BASE16384_DECBUFSZ];
+static char encbuf[BASE16384_ENCBUFSZ];
+static char decbuf[BASE16384_DECBUFSZ];
 
 #ifndef _WIN32
-unsigned long get_start_ms() {
+static unsigned long get_start_ms() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
@@ -52,11 +52,11 @@ static base16384_err_t print_usage() {
 			BASE16384_VERSION_DATE
 		"). Usage:\n", stderr
 	);
-	fputs("base16384 [-edtn] [inputfile] [outputfile]\n", stderr);
+	fputs("base16384 -[ed][t][n][cC] [inputfile] [outputfile]\n", stderr);
 	fputs("  -e\t\tencode (default)\n", stderr);
 	fputs("  -d\t\tdecode\n", stderr);
 	fputs("  -t\t\tshow spend time\n", stderr);
-	fputs("  -n\t\tdon't write utf16be file header (0xFEFF)\n", stderr);
+	fputs("  -n\t\tdonot write utf16be file header (0xFEFF)\n", stderr);
 	fputs("  -c\t\tembed or validate checksum in remainder\n", stderr);
 	fputs("  -C\t\tdo -c forcely\n", stderr);
 	fputs("  inputfile\tpass - to read from stdin\n", stderr);

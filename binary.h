@@ -90,7 +90,11 @@
 // initial sum value used in BASE16384_FLAG_SUM_CHECK_ON_REMAIN
 #define BASE16384_SIMPLE_SUM_INIT_VALUE		(0x8e29c213)
 
+#ifdef _MSC_VER
+static inline uint32_t calc_sum(uint32_t sum, int cnt, const char* encbuf) {
+#else
 static inline uint32_t calc_sum(uint32_t sum, size_t cnt, const char* encbuf) {
+#endif
 	size_t i;
 	uint32_t buf;
 	for(i = 0; i < cnt; i++) {

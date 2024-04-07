@@ -28,10 +28,12 @@
 	BASE16384_WRAP_DECL(encode, file, const char*);
 	BASE16384_WRAP_DECL(encode, fp, FILE*);
 	BASE16384_WRAP_DECL(encode, fd, int);
+	BASE16384_WRAP_DECL(encode, stream, base16384_stream_t*);
 
 	BASE16384_WRAP_DECL(decode, file, const char*);
 	BASE16384_WRAP_DECL(decode, fp, FILE*);
 	BASE16384_WRAP_DECL(decode, fd, int);
+	BASE16384_WRAP_DECL(decode, stream, base16384_stream_t*);
 
 #undef BASE16384_WRAP_DECL
 
