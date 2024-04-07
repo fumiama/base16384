@@ -44,4 +44,4 @@ jobs:
           mkdir build && cd ./build
           cmake .. -DBUILD=test -G "Visual Studio 17 2022" -A x64
           cmake --build  .
-          ./ctest --rerun-failed --output-on-failure
+          .\test\Debug\wrap_test.exe --rerun-failed --output-on-failure
