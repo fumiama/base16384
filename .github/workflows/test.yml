@@ -42,17 +42,17 @@ jobs:
 
       - name: Build and Run 64bit Tests
         run: |
-          mkdir build && cd build
+          cmake -E make_directory build
+          cd build
           cmake -DBUILD=test -G "Visual Studio 17 2022" -A x64 ..
-          cd ..
-          cmake --build build --config Release --target all --
+          cmake --build . --config Release --target all --
           ctest -C Release -T test || ctest -C Release -T test --rerun-failed --output-on-failure
 
       - name: Build and Run 32bit Tests
         run: |
           Remove-Item -Path build -Force
-          mkdir build && cd build
+          cmake -E make_directory build
+          cd build
           cmake -DBUILD=test -DFORCE_32BIT=1 -G "Visual Studio 17 2022" -A x86 ..
-          cd ..
-          cmake --build build --config Release --target all --
+          cmake --build . --config Release --target all --
           ctest -C Release -T test || ctest -C Release -T test --rerun-failed --output-on-failure
