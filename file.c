@@ -16,6 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef _MSC_VER
+#ifndef _CRT_SECURE_NO_WARNINGS
+	#define _CRT_SECURE_NO_WARNINGS
+#endif
+#endif
+
 #ifndef __cosmopolitan
 #include <stdio.h>
 #include <stdint.h>
@@ -91,7 +97,11 @@ base16384_err_t base16384_encode_file_detailed(const char* input, const char* ou
 			fputc(0xFE, fpo);
 			fputc(0xFF, fpo);
 		}
-		size_t cnt;
+		#ifdef _MSC_VER
+			int cnt;
+		#else
+			size_t cnt;
+		#endif
 		uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 		while((cnt = fread(encbuf, sizeof(char), inputsize, fp)) > 0) {
 			int n;
@@ -159,7 +169,11 @@ base16384_err_t base16384_encode_fp_detailed(FILE* input, FILE* output, char* en
 	}
 	off_t inputsize = _BASE16384_ENCBUFSZ;
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
-	size_t cnt;
+	#ifdef _MSC_VER
+		int cnt;
+	#else
+		size_t cnt;
+	#endif
 	while((cnt = fread(encbuf, sizeof(char), inputsize, input)) > 0) {
 		int n;
 		while(cnt%7) {
@@ -228,7 +242,7 @@ base16384_err_t base16384_encode_stream_detailed(base16384_stream_t* input, base
 	uint32_t sum = BASE16384_SIMPLE_SUM_INIT_VALUE;
 	if(!(flag&BASE16384_FLAG_NOHEADER)) call_writer(output, "\xfe\xff", 2);
 	while((cnt = call_reader(input, encbuf, inputsize)) > 0) {
-		int n;
+		ssize_t n;
 		while(cnt%7) {
 			n = call_reader(input, encbuf+cnt, sizeof(char));
 			if(n > 0) cnt++;

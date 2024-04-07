@@ -23,10 +23,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #endif
-#ifdef _MSC_VER
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
-#endif
 
 enum base16384_err_t {
 	base16384_err_ok,
@@ -63,6 +59,13 @@ typedef enum base16384_err_t base16384_err_t;
 // forcely do sumcheck without checking data length
 #define BASE16384_FLAG_DO_SUM_CHECK_FORCELY	(1<<2)
 
+#ifdef _MSC_VER
+#include <BaseTsd.h>
+#ifndef ssize_t
+	#define SSIZE_T ssize_t;
+#endif
+#endif
+
 /**
  * @brief custom reader function interface
  * @param client_data the data pointer defined by the client
@@ -80,6 +83,12 @@ typedef ssize_t (*base16384_reader_t)(const void *client_data, void *buffer, siz
  * @return the size written
 */
 typedef ssize_t (*base16384_writer_t)(const void *client_data, const void *buffer, size_t count);
+
+#ifdef _MSC_VER
+#ifdef ssize_t
+	#undef ssize_t
+#endif
+#endif
 
 union base16384_io_function_t {
 	base16384_reader_t reader;
