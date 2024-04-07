@@ -23,6 +23,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #endif
+#ifdef _MSC_VER
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
 
 enum base16384_err_t {
 	base16384_err_ok,
