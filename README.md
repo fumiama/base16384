@@ -32,8 +32,8 @@ Save more space and since the code 0x0000 is encoded to "一", finding zero spac
 sudo apt install base16384
 ```
 
-### Install from Homebrew
-> 从 Homebrew 安装
+### Install from Homebrew (MacOS, etc.)
+> 从 Homebrew 安装 (如 MacOS 等系统)
 ```bash
 brew install base16384
 ```
@@ -44,6 +44,18 @@ brew install base16384
 sudo add-apt-repository ppa:fumiama/ppa
 sudo apt-get update
 sudo apt-get install base16384
+```
+
+### Install from OpenWrt packages
+> OpenWrt 下安装 packages
+```bash
+opkg install base16384
+```
+
+### Install from Arch Linux AUR
+> Arch Linux 上从 AUR 仓库安装
+```
+yay -S base16384
 ```
 
 ### Build from source code
@@ -86,6 +98,18 @@ base16384 -[ed][t][n][cC] [inputfile] [outputfile]
   outputfile    pass - to write to stdout
 ```
 
+You can also run functional tests by
+
+也可执行以下命令以测试功能
+
+```bash
+mkdir build
+cd build
+cmake -DBUILD=test ..
+cmake --build . --config Release --target all --
+ctest
+```
+
 ## Examples
 > 用例
 1. Encode simple text
@@ -96,7 +120,7 @@ base16384 -[ed][t][n][cC] [inputfile] [outputfile]
     婌焳廔萷
     ```
 
-3. Decode simple text
+2. Decode simple text
     > 简单文本解码
 
     ```bash

@@ -1,6 +1,6 @@
 /* base16384.c
  * This file is part of the base16384 distribution (https://github.com/fumiama/base16384).
- * Copyright (c) 2022-2024 Fumiama Minamoto.
+ * Copyright (c) 2022-2025 Fumiama Minamoto.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ static base16384_err_t print_usage() {
 		#define BASE16384_VERSION_DATE "unknown date"
 	#endif
 	fputs(
-		"Copyright (c) 2022-2024 Fumiama Minamoto.\nBase16384 "
+		"Copyright (c) 2022-2025 Fumiama Minamoto.\nBase16384 "
 		BASE16384_VERSION
 		" ("
 			BASE16384_VERSION_DATE
